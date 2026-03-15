@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS tabs (
 );
 
 -- Предзаполнение жанров
-INSERT INTO genres VALUES
+MERGE INTO genres (name) KEY(name) VALUES
 ('Rock'),
 ('Blues'),
 ('Funk');

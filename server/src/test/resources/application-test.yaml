@@ -8,14 +8,14 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
     defer-datasource-initialization: true
-    show-sql: false
 
   sql:
     init:
-      mode: always
+      mode: embedded
       data-locations: classpath:data.sql
+      schema-locations: classpath:/test-schema.sql
 
   h2:
     console:

@@ -17,8 +17,4 @@ public class GenerationLockService {
     public void unlock(String ip) {
         activeIps.remove(ip);
     }
-
-    public boolean isLocked(String ip) {
-        return activeIps.contains(ip);
-    }
 }

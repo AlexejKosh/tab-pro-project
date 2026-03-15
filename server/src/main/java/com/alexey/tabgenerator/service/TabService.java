@@ -11,15 +11,13 @@ import com.alexey.tabgenerator.exception.ForbiddenException;
 import com.alexey.tabgenerator.exception.NotFoundException;
 import com.alexey.tabgenerator.repository.GenreRepository;
 import com.alexey.tabgenerator.repository.TabRepository;
-import com.alexey.tabgenerator.repository.UserRepository;
 import com.alexey.tabgenerator.integration.MlClient;
-
 import com.alexey.tabgenerator.security.SecurityUtils;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -35,9 +33,7 @@ public class TabService {
 
     private final TabRepository tabRepository;
     private final GenreRepository genreRepository;
-    private final UserRepository userRepository;
     private final MlClient mlClient;
-    private final ObjectMapper objectMapper;
     private final SecurityUtils securityUtils;
 
     /**

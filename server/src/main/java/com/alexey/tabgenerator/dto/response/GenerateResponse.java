@@ -1,7 +1,5 @@
 package com.alexey.tabgenerator.dto.response;
 
-import com.alexey.tabgenerator.entity.Tab;
-import com.alexey.tabgenerator.exception.JsonConversionException;
 import lombok.Builder;
 import lombok.Getter;
 
