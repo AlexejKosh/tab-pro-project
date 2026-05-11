@@ -38,10 +38,13 @@ logging:
     com.alexey.tabgenerator: ${LOG_APP_LEVEL}
     org.springframework.web: ${LOG_WEB_LEVEL}
 
+file:
+  upload-dir: uploads/audio/tabs
+
 ml:
   base-url: ${ML_BASE_URL}
   generate-endpoint: ${ML_GENERATE_ENDPOINT}
-  timeout-seconds: 30
+  timeout-seconds: 180
 
 jwt:
   secret: ${JWT_SECRET}

@@ -1,6 +1,7 @@
 package com.alexey.tabgenerator.dto.response;
 
 import com.alexey.tabgenerator.entity.User;
+
 import lombok.Builder;
 import lombok.Getter;
 

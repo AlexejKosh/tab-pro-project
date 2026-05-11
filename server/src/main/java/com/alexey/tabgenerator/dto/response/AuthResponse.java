@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * DTO для ответа при аутентификации пользователя.
- * Содержит JWT токен, который возвращается после успешного логина или регистрации.
+ * DTO для ответа при аутентификации пользователя (JWT-токен).
  */
 @Getter
 @AllArgsConstructor

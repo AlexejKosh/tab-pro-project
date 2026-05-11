@@ -4,6 +4,7 @@ import com.alexey.tabgenerator.dto.request.SaveTabRequest;
 import com.alexey.tabgenerator.dto.request.GenerateTabRequest;
 import com.alexey.tabgenerator.dto.response.GenerateResponse;
 import com.alexey.tabgenerator.dto.response.TabResponse;
+import com.alexey.tabgenerator.dto.response.TabSummaryResponse;
 import com.alexey.tabgenerator.exception.TooManyGenerateRequestsException;
 import com.alexey.tabgenerator.service.GenerationLockService;
 import com.alexey.tabgenerator.service.TabService;
@@ -36,14 +37,14 @@ public class TabController {
      * Получение всех табулатур текущего пользователя.
      */
     @GetMapping
-    public ResponseEntity<List<TabResponse>> getAllTabs() {
+    public ResponseEntity<List<TabSummaryResponse>> getAllTabs(
+        HttpServletRequest httpRequest
+    ) {
 
-        log.debug("Запрос на получение всех табулатур текущего пользователя");
+        log.debug("[{}] Запрос на получение всех табулатур текущего пользователя",
+            httpRequest.getRemoteAddr());
 
-        List<TabResponse> tabs = tabService.getAllTabs();
-
-        log.info("Запрос на получение всех табулатур текущего пользователя успешно обработан: size={}",
-            tabs.size());
+        List<TabSummaryResponse> tabs = tabService.getAllTabs();
 
         return ResponseEntity.ok(tabs);
     }
@@ -52,13 +53,14 @@ public class TabController {
      * Получение табулатуры по её идентификатору.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<TabResponse> getTabById(@PathVariable Long id) {
+    public ResponseEntity<TabResponse> getTabById(
+        @PathVariable Long id, HttpServletRequest httpRequest
+    ) {
 
-        log.debug("Запрос на получение табулатуры: id={}", id);
+        log.debug("[{}] Запрос на получение табулатуры: id={}",
+            httpRequest.getRemoteAddr(), id);
 
         TabResponse tab = tabService.getTabById(id);
-
-        log.info("Запрос на получение табулатуры успешно обработан: id={}, title={}", id, tab.getTitle());
 
         return ResponseEntity.ok(tab);
     }
@@ -72,20 +74,18 @@ public class TabController {
         @Valid @RequestBody GenerateTabRequest request
     ) {
 
-        log.debug("Запрос на генерацию табулатуры: title={}, genreId={}",
-            request.getTitle(), request.getGenreId());
-
         String ip = httpRequest.getRemoteAddr();
+
+        log.debug("[{}] Запрос на генерацию табулатуры: genreId={}, musicKey={}, bpm={}",
+            ip, request.getGenreId(), request.getMusicKey(), request.getBpm());
 
         if (!generationLockService.tryLock(ip)) {
             throw new TooManyGenerateRequestsException("Генерация уже в процессе для этого IP");
         }
 
         try {
+            request.setIp(ip);
             GenerateResponse tab = tabService.generateTab(request);
-
-            log.info("Запрос на генерацию табулатуры успешно обработан: title={}, genreId={}",
-                tab.getTitle(), tab.getGenreId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(tab);
         } finally {
@@ -98,16 +98,14 @@ public class TabController {
      */
     @PostMapping
     public ResponseEntity<Void> saveTab(
-        @Valid @RequestBody SaveTabRequest request
+        @Valid @RequestBody SaveTabRequest request,
+        HttpServletRequest httpRequest
     ) {
 
-        log.debug("Запрос на сохранение табулатуры: title={}, genreId={}",
-            request.getTitle(), request.getGenreId());
+        log.debug("[{}] Запрос на сохранение табулатуры: title={}, genreId={}",
+            httpRequest.getRemoteAddr(), request.getTitle(), request.getGenreId());
 
         tabService.saveTab(request);
-
-        log.info("Запрос на сохранение табулатуры успешно обработан: title={}",
-            request.getTitle());
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -116,13 +114,15 @@ public class TabController {
      * Удаление табулатуры пользователя по её идентификатору.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTab(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteTab(
+        @PathVariable Long id,
+        HttpServletRequest httpRequest
+    ) {
 
-        log.debug("Запрос на удаление табулатуры: id={}", id);
+        log.debug("[{}] Запрос на удаление табулатуры: id={}",
+            httpRequest.getRemoteAddr(), id);
 
         tabService.deleteTab(id);
-
-        log.warn("Запрос на удаление табулатуры успешно обработан: id={}", id);
 
         return ResponseEntity.noContent().build();
     }

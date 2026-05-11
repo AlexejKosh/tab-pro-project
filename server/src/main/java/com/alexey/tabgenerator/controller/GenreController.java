@@ -3,6 +3,7 @@ package com.alexey.tabgenerator.controller;
 import com.alexey.tabgenerator.dto.response.GenreResponse;
 import com.alexey.tabgenerator.service.GenreService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -27,13 +28,14 @@ public class GenreController {
      * Получение списка всех доступных жанров.
      */
     @GetMapping
-    public ResponseEntity<List<GenreResponse>> getAllGenres() {
+    public ResponseEntity<List<GenreResponse>> getAllGenres(
+        HttpServletRequest httpRequest
+    ) {
 
-        log.debug("Запрос на получение списка всех жанров");
+        log.debug("[{}] Запрос на получение списка всех жанров",
+            httpRequest.getRemoteAddr());
 
         List<GenreResponse> genres = genreService.getAllGenres();
-
-        log.info("Запрос на получение списка жанров успешно обработан: size={}", genres.size());
 
         return ResponseEntity.ok(genres);
     }
@@ -42,13 +44,14 @@ public class GenreController {
      * Получение информации о жанре по его идентификатору.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<GenreResponse> getGenreById(@PathVariable Long id) {
+    public ResponseEntity<GenreResponse> getGenreById(
+        @PathVariable Long id, HttpServletRequest httpRequest
+    ) {
 
-        log.debug("Запрос на получение жанра: id={}", id);
+        log.debug("[{}] Запрос на получение жанра: id={}",
+            httpRequest.getRemoteAddr(), id);
 
         GenreResponse genre = genreService.getGenreById(id);
-
-        log.info("Запрос на получение жанра успешно обработан: name={}", genre.getName());
 
         return ResponseEntity.ok(genre);
     }

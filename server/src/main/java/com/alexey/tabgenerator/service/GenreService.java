@@ -30,11 +30,9 @@ public class GenreService {
     @Transactional(readOnly = true)
     public List<GenreResponse> getAllGenres() {
 
-        log.debug("Получение всех жанров");
-
         List<Genre> genres = genreRepository.findAll();
 
-        log.info("Все жанры успешно получены: size={}", genres.size());
+        log.debug("Получен список жанров: size={}", genres.size());
 
         // Преобразование сущностей в DTO для ответа
         return genres.stream()
@@ -55,7 +53,11 @@ public class GenreService {
                     return new NotFoundException("Жанр не найден");
                 });
 
-        log.info("Жанр успешно получен: name={}", genre.getName());
+        log.debug(
+            "Получен жанр: id={}, name={}",
+            genre.getId(),
+            genre.getName()
+        );
 
         return GenreResponse.fromEntity(genre);
     }

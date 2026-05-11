@@ -1,25 +1,25 @@
 package com.alexey.tabgenerator.integration;
 
 import com.alexey.tabgenerator.config.MlProperties;
+import com.alexey.tabgenerator.dto.request.GenerateTabRequest;
+import com.alexey.tabgenerator.dto.response.MlServerGenerateResponse;
 import com.alexey.tabgenerator.exception.MlServerException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Сервис для интеграции с ML сервером генерации табулатур.
  * Отвечает за формирование запроса, отправку на ML сервер
- * и получение результата в виде структуры List<List<Integer>>.
+ * и получение результата в виде строки табулатуры tabData
+ * и закодированную строку в Base64 - mp3 аудио.
  */
 @Slf4j
 @Service
@@ -28,38 +28,61 @@ public class MlClient {
 
     private final RestTemplate restTemplate;        // HTTP клиент для отправки запросов
     private final MlProperties mlProperties;        // Настройки ML сервера (URL и endpoint)
-    private final ObjectMapper objectMapper;        // Конвертер JSON
 
     /**
      * Генерация табулатуры через ML сервер.
      */
-    public List<List<Integer>> generateTab(String title, List<List<Object>>chordProgression,
-                                           String signature, Long genreId) {
+    public MlServerGenerateResponse generateTab(GenerateTabRequest request) {
 
         String url = mlProperties.getBaseUrl() + mlProperties.getGenerateEndpoint();
-        Map<String, Object> request = new HashMap<>();
 
-        request.put("title", title);
-        request.put("chordProgression", chordProgression);
-        request.put("signature", signature);
-        request.put("genreId", genreId);
-
-        log.debug("Отправка запроса на ML сервер: url={}", url);
+        log.debug("Отправка запроса на ML сервер: url={}, musicKey={}, genreId{}, bpm={}",
+            url, request.getMusicKey(), request.getGenreId(), request.getBpm());
 
         try {
-            ResponseEntity<Object> responseEntity =
-                restTemplate.postForEntity(url, new HttpEntity<>(request), Object.class);
+            HttpEntity<GenerateTabRequest> entity = new HttpEntity<>(request);
 
-            Object responseBody = responseEntity.getBody();
+            ResponseEntity<MlServerGenerateResponse> responseEntity =
+                restTemplate.postForEntity(
+                    url,
+                    entity,
+                    MlServerGenerateResponse.class
+                );
 
-            log.info("Получен ответ от ML сервера");
+            MlServerGenerateResponse response = responseEntity.getBody();
 
-            // Сериализация данных табулатуры, полученных в ответе с ML сервера
-            String json = objectMapper.writeValueAsString(responseBody);
+            if (response == null) {
+                throw new MlServerException(
+                    "Пустой ответ от ML сервера",
+                    HttpStatus.BAD_GATEWAY
+                );
+            }
 
-            return objectMapper.readValue(json, new TypeReference<List<List<Integer>>>(){});
+            log.info("Успешно получен ответ от ML сервера: musicKey={}, genreId{}, bpm={}",
+                request.getMusicKey(), request.getGenreId(), request.getBpm());
+
+            return response;
+
+        } catch (HttpStatusCodeException e) {
+            // Ошибка, которую вернул FastAPI
+            throw new MlServerException(
+                e.getResponseBodyAsString(),
+                HttpStatus.valueOf(e.getStatusCode().value())
+            );
+
+        } catch (ResourceAccessException e) {
+            // ML сервер недоступен
+            throw new MlServerException(
+                "ML сервер недоступен",
+                HttpStatus.BAD_GATEWAY
+            );
+
         } catch (Exception e) {
-            throw new MlServerException("Ошибка работы ML сервера, " + e);
+            // Неожиданная ошибка backend
+            throw new MlServerException(
+                "Внутренняя ошибка при работе с ML сервером",
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
 }

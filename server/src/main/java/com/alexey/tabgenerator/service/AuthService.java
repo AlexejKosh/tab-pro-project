@@ -1,13 +1,16 @@
 package com.alexey.tabgenerator.service;
 
 import com.alexey.tabgenerator.dto.request.LoginRequest;
+import com.alexey.tabgenerator.dto.request.NewPasswordRequest;
 import com.alexey.tabgenerator.dto.request.RecoverPasswordRequest;
 import com.alexey.tabgenerator.dto.request.RegisterRequest;
 import com.alexey.tabgenerator.dto.response.AuthResponse;
+import com.alexey.tabgenerator.dto.response.CheckRecoverPasswordTokenResponse;
 import com.alexey.tabgenerator.dto.response.RecoverPasswordResponse;
+import com.alexey.tabgenerator.entity.PasswordResetToken;
 import com.alexey.tabgenerator.entity.User;
-import com.alexey.tabgenerator.exception.DuplicateEntityException;
-import com.alexey.tabgenerator.exception.UnauthorizedException;
+import com.alexey.tabgenerator.exception.*;
+import com.alexey.tabgenerator.repository.PasswordResetTokenRepository;
 import com.alexey.tabgenerator.repository.UserRepository;
 import com.alexey.tabgenerator.security.JwtService;
 
@@ -17,11 +20,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
+import java.time.OffsetDateTime;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Сервис для работы с аутентификацией и восстановлением пароля пользователей.
- * Обрабатывает регистрацию, авторизацию и отправку новых паролей по email.
+ * Обрабатывает регистрацию, авторизацию и восстановление паролей по email.
  */
 @Slf4j
 @Service
@@ -32,10 +37,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final EmailService emailService;
-
-    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static final int PASSWORD_LENGTH = 8;
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     /**
      * Регистрация нового пользователя.
@@ -44,7 +46,8 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
 
-        log.debug("Регистрация пользователя: username={}", request.getUsername());
+        log.debug("Регистрация пользователя: username={}, email={}",
+            request.getUsername(), request.getEmail());
 
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new DuplicateEntityException("Username уже занят");
@@ -64,7 +67,8 @@ public class AuthService {
 
         String token = jwtService.generateToken(user);
 
-        log.info("Пользователь успешно зарегистрирован: username={}", user.getUsername());
+        log.info("Пользователь успешно зарегистрирован: id={}, username={}",
+            user.getId(), user.getUsername());
 
         return new AuthResponse(token);
     }
@@ -76,7 +80,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
 
-        log.debug("Авторизация для  пользователя: username/email={}", request.getUsernameOrEmail());
+        log.debug("Попытка авторизации для  пользователя: username/email={}", request.getUsernameOrEmail());
 
         String usernameOrEmail = request.getUsernameOrEmail();
 
@@ -91,56 +95,106 @@ public class AuthService {
 
         String token = jwtService.generateToken(user);
 
-        log.info("Пользователь успешно авторизован: username={}", user.getUsername());
+        log.info("Пользователь успешно авторизован: id={}, username={}",
+            user.getId(), user.getUsername());
 
         return new AuthResponse(token);
     }
 
     /**
-     * Восстановление пароля пользователя.
-     * Если email найден, генерирует новый пароль, сохраняет его и отправляет на почту.
+     * Инициализация восстановления пароля пользователя.
+     * Если email найден в системе, то отправляет на почту ссылку для восстановления.
      */
     @Transactional
-    public RecoverPasswordResponse recoverPassword(RecoverPasswordRequest request) {
+    public RecoverPasswordResponse sendRecoverPasswordMail(RecoverPasswordRequest request) {
 
-        log.debug("Восстановление пароля: email={}", request.getEmail());
+        log.debug(
+            "Инициация восстановления пароля: email={}",
+            request.getEmail()
+        );
+
+        passwordResetTokenRepository.deleteByExpiresAtBefore(OffsetDateTime.now());
 
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
 
         String message;
 
         if (user != null) {
-            String newPassword = generateRandomPassword();
-            user.setPasswordHash(passwordEncoder.encode(newPassword));
-            userRepository.save(user);
+            passwordResetTokenRepository.deleteByUser(user);
+            String token = UUID.randomUUID().toString();
+            PasswordResetToken resetToken = PasswordResetToken.builder()
+                .user(user)
+                .token(token)
+                .expiresAt(OffsetDateTime.now().plusMinutes(30))
+                .build();
 
-            log.info("Новый пароль сгенерирован: username={}", user.getUsername());
+            passwordResetTokenRepository.save(resetToken);
+            emailService.sendPasswordRecovery(user.getEmail(), token);
 
-            emailService.sendPasswordRecovery(user.getEmail(), newPassword);
-            message = "Новый пароль для входа отправлен на почту.";
+            log.info(
+                "Токен восстановления создан и отправлен: userId={}",
+                user.getId()
+            );
 
-            log.info("Восстановление пароля инициировано: email={}", request.getEmail());
+            message = "Ссылка для восставноления пароля отправлена на почту.";
         } else {
-            message = "Пользователь с данным email не найден.";
+            log.warn(
+                "Попытка восстановления пароля для несуществующего email={}",
+                request.getEmail()
+            );
 
-            log.warn("Попытка восстановления пароля для несуществующего email: email={}", request.getEmail());
+            message = "Пользователь с данным email не найден.";
         }
 
         return new RecoverPasswordResponse(message);
     }
 
     /**
-     * Генерация случайного пароля заданной длины
+     * Проверка валидности токена восстановления пароля
      */
-    private String generateRandomPassword() {
+    @Transactional
+    public CheckRecoverPasswordTokenResponse checkRecoverPasswordToken(
+        String token
+    ) {
 
-        StringBuilder sb = new StringBuilder(PASSWORD_LENGTH);
+        passwordResetTokenRepository.deleteByExpiresAtBefore(OffsetDateTime.now());
 
-        for (int i = 0; i < PASSWORD_LENGTH; i++) {
-            int index = RANDOM.nextInt(CHARACTERS.length());
-            sb.append(CHARACTERS.charAt(index));
+        PasswordResetToken resetToken =
+            passwordResetTokenRepository.findByToken(token).orElse(null);
+
+        return new CheckRecoverPasswordTokenResponse(resetToken != null);
+    }
+
+    /**
+     * Завершение процесса восстановления пароля пользователя.
+     * При успешной проверке обновляет пароль пользователя и удаляет токен.
+     */
+    @Transactional
+    public void recoverPassword(NewPasswordRequest request, String token) {
+
+        log.debug("Попытка сброса пароля по токену");
+
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+            .orElseThrow(() -> new NotFoundException("Токен не найден"));
+
+        if (resetToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+            throw new TokenExpiredException("Срок действия токена истёк");
         }
 
-        return sb.toString();
+        if (!Objects.equals(request.getPassword1(), request.getPassword2())) {
+            throw new PasswordMismatchException("Пароли не совпадают");
+        }
+
+        User user = resetToken.getUser();
+
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword1()));
+        userRepository.save(user);
+
+        passwordResetTokenRepository.delete(resetToken);
+
+        log.info(
+            "Пароль успешно сброшен: userId={}",
+            user.getId()
+        );
     }
 }

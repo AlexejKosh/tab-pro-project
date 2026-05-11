@@ -15,6 +15,9 @@ public class GenreResponse {
 
     private String name;
 
+    /**
+     * Создание DTO из сущности Genre.
+     */
     public static GenreResponse fromEntity(Genre genre) {
         return GenreResponse.builder()
                 .id(genre.getId())

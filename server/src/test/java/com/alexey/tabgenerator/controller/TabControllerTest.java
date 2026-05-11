@@ -2,15 +2,23 @@ package com.alexey.tabgenerator.controller;
 
 import com.alexey.tabgenerator.dto.request.GenerateTabRequest;
 import com.alexey.tabgenerator.dto.request.SaveTabRequest;
-import com.alexey.tabgenerator.entity.*;
+import com.alexey.tabgenerator.dto.response.MlServerGenerateResponse;
+import com.alexey.tabgenerator.entity.Tab;
 import com.alexey.tabgenerator.integration.MlClient;
 import com.alexey.tabgenerator.repository.TabRepository;
+import com.alexey.tabgenerator.repository.GenreRepository;
+import com.alexey.tabgenerator.repository.UserRepository;
 import com.alexey.tabgenerator.security.JwtService;
 import com.alexey.tabgenerator.security.SecurityUtils;
 import com.alexey.tabgenerator.security.UserDetailsServiceImpl;
 import com.alexey.tabgenerator.service.GenerationLockService;
 
 import jakarta.transaction.Transactional;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,11 +33,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -43,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * - сохранение табулатур
  * - удаление табулатур
  *
- * Используют моки: {@link TabRepository}, {@link MlClient},
+ * Используют моки: {@link MlClient},
  * {@link GenerationLockService}, {@link JwtService},
  * {@link UserDetailsServiceImpl}, {@link SecurityUtils}.
  */
@@ -59,14 +62,16 @@ class TabControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // Мок репозитория для сущности Tab, поскольку
-    // H2 некорректно работает с JSONB, из-за чего
-    // доступ к БД изолируется
-    @MockitoBean
+    @Autowired
     private TabRepository tabRepository;
 
-    // Мок ML клиента, чтобы не выполнять реальные
-    // HTTP-запросы к ML серверу
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private GenreRepository genreRepository;
+
+    // Мок ML клиента, чтобы не выполнять реальные HTTP-запросы к ML серверу
     @MockitoBean
     private MlClient mlClient;
 
@@ -74,8 +79,7 @@ class TabControllerTest {
     @MockitoBean
     private GenerationLockService generationLockService;
 
-    // Мок компонентов безопасности
-    // для  иммитации авторизованного пользователя
+    // Мок компонентов безопасности для имитации авторизованного пользователя
     @MockitoBean
     private JwtService jwtService;
 
@@ -91,44 +95,29 @@ class TabControllerTest {
 
     @BeforeEach
     void setup() {
-        currentUser = new com.alexey.tabgenerator.entity.User();
-        currentUser.setId(7L);
-        currentUser.setUsername("alexeyKo");
-        currentUser.setEmail("miner_847@mail.ru");
+        currentUser = userRepository.findById(1L).orElseThrow();
 
         UserDetails userDetails = User
-            .withUsername("alexeyKo")
+            .withUsername(currentUser.getUsername())
             .password("encoded")
             .authorities("ROLE_USER")
             .build();
 
-        when(jwtService.extractUsername(TOKEN)).thenReturn("alexeyKo");
+        when(jwtService.extractUsername(TOKEN)).thenReturn(currentUser.getUsername());
         when(jwtService.isTokenValid(anyString(), any())).thenReturn(true);
         when(jwtService.buildAuthentication(userDetails)).thenCallRealMethod();
-        when(userDetailsService.loadUserByUsername("alexeyKo")).thenReturn(userDetails);
+        when(userDetailsService.loadUserByUsername(currentUser.getUsername())).thenReturn(userDetails);
         when(securityUtils.getCurrentUser()).thenReturn(currentUser);
     }
 
     @Test
     @DisplayName("Получение табулатур: успех")
     void getAllTabs_success() throws Exception {
-        Tab tab = new Tab();
-        tab.setId(11L);
-        tab.setTitle("Типо Джеймс Браун");
-        tab.setUser(currentUser);
-        tab.setGenre(new Genre(1L, "Rock"));
-        tab.setSignature("4/4");
-        tab.setChordProgression(List.of(List.of("C", 1)));
-        tab.setTabData(List.of(List.of(1,2,3,4)));
-        tab.setCreatedAt(OffsetDateTime.now());
-
-        when(tabRepository.findByUser(any())).thenReturn(List.of(tab));
-
         mockMvc.perform(get("/tabs")
-                .header("Authorization", "Bearer " + TOKEN))
+            .header("Authorization", "Bearer " + TOKEN))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].id").value(11))
-            .andExpect(jsonPath("$[0].title").value("Типо Джеймс Браун"));
+            .andExpect(jsonPath("$[0].id").value(1))
+            .andExpect(jsonPath("$[0].title").value("Что-то вроде Битлз"));
     }
 
     @Test
@@ -142,41 +131,17 @@ class TabControllerTest {
     @Test
     @DisplayName("Получение табулатуры по id: успех")
     void getTabById_success() throws Exception {
-        Tab tab = new Tab();
-        tab.setId(11L);
-        tab.setTitle("Типо Джеймс Браун");
-        tab.setUser(currentUser);
-        tab.setGenre(new Genre(1L, "Rock"));
-        tab.setSignature("4/4");
-        tab.setChordProgression(List.of(List.of("C", 1)));
-        tab.setTabData(List.of(List.of(1,2,3,4)));
-        tab.setCreatedAt(OffsetDateTime.now());
-
-        when(tabRepository.findById(11L)).thenReturn(Optional.of(tab));
-
-        mockMvc.perform(get("/tabs/11")
-                .header("Authorization", "Bearer " + TOKEN))
+        mockMvc.perform(get("/tabs/1")
+            .header("Authorization", "Bearer " + TOKEN))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(11))
-            .andExpect(jsonPath("$.title").value("Типо Джеймс Браун"));
+            .andExpect(jsonPath("$.id").value(1))
+            .andExpect(jsonPath("$.title").value("Что-то вроде Битлз"));
     }
 
     @Test
     @DisplayName("Получение табулатуры по id: доступ запрещён")
     void getTabById_fail_forbidden() throws Exception {
-        Tab tab = new Tab();
-        tab.setId(9L);
-        tab.setTitle("Чужой таб");
-        tab.setUser(com.alexey.tabgenerator.entity.User.builder()
-            .id(8L)
-            .username("other")
-            .email("other@mail.ru")
-            .build());
-        tab.setGenre(new Genre(1L, "Rock"));
-
-        when(tabRepository.findById(9L)).thenReturn(Optional.of(tab));
-
-        mockMvc.perform(get("/tabs/9")
+        mockMvc.perform(get("/tabs/4")
                 .header("Authorization", "Bearer " + TOKEN))
             .andExpect(status().isForbidden());
     }
@@ -184,10 +149,8 @@ class TabControllerTest {
     @Test
     @DisplayName("Получение табулатуры по id: несуществующий id")
     void getTabById_fail_notFound() throws Exception {
-        when(tabRepository.findById(20L)).thenReturn(Optional.empty());
-
-        mockMvc.perform(get("/tabs/20")
-                .header("Authorization", "Bearer " + TOKEN))
+        mockMvc.perform(get("/tabs/999")
+            .header("Authorization", "Bearer " + TOKEN))
             .andExpect(status().isNotFound());
     }
 
@@ -195,13 +158,17 @@ class TabControllerTest {
     @DisplayName("Генерация табулатуры: успех")
     void generateTab_success() throws Exception {
         GenerateTabRequest request = new GenerateTabRequest();
-        request.setTitle("Новая таба");
         request.setGenreId(1L);
         request.setSignature("4/4");
-        request.setChordProgression(List.of(List.of("C", 1)));
+		request.setMusicKey(0);
+		request.setBpm(140);
+		request.setChordProgression("C-1,G-1,F-1,Am-1");
+        request.setIp("127.0.0.1");
 
-        List<List<Integer>> tabData = List.of(List.of(1,2,3,4));
-        when(mlClient.generateTab(anyString(), any(), anyString(), anyLong())).thenReturn(tabData);
+        MlServerGenerateResponse mlResp = new MlServerGenerateResponse();
+        mlResp.setTabData("tab-data-sample");
+        mlResp.setAudioData("audio-b64");
+        when(mlClient.generateTab(any())).thenReturn(mlResp);
         when(generationLockService.tryLock(anyString())).thenReturn(true);
 
         mockMvc.perform(post("/tabs/generate")
@@ -209,34 +176,38 @@ class TabControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.title").value("Новая таба"));
+                .andExpect(jsonPath("$.signature").value("4/4"));
     }
 
     @Test
     @DisplayName("Генерация табулатуры: невалидное поле")
     void generateTab_fail_validationFail() throws Exception {
         GenerateTabRequest request = new GenerateTabRequest();
-        request.setTitle("");
-        request.setGenreId(1L);
-        request.setSignature("4/4");
-        request.setChordProgression(List.of(List.of("C", 1)));
+		request.setGenreId(1L);
+		request.setSignature("4/4");
+		request.setMusicKey(-5);
+		request.setBpm(140);
+		request.setChordProgression("C-1,G-1,F-1,Am-1");
+		request.setIp("127.0.0.1");
 
         mockMvc.perform(post("/tabs/generate")
                 .header("Authorization", "Bearer " + TOKEN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("title: Название табулатуры обязательно"));
+            .andExpect(jsonPath("$.message").value("musicKey: must be greater than or equal to 0"));
     }
 
     @Test
     @DisplayName("Генерация табулатуры: попытка отправить 2 запроса на генерацию")
     void generateTab_fail_tooManyRequests() throws Exception {
         GenerateTabRequest request = new GenerateTabRequest();
-        request.setTitle("Новая таба");
-        request.setGenreId(1L);
-        request.setSignature("4/4");
-        request.setChordProgression(List.of(List.of("C", 1)));
+		request.setGenreId(1L);
+		request.setSignature("4/4");
+		request.setMusicKey(0);
+		request.setBpm(140);
+		request.setChordProgression("C-1,G-1,F-1,Am-1");
+		request.setIp("127.0.0.1");
 
         when(generationLockService.tryLock(anyString())).thenReturn(false);
 
@@ -252,30 +223,45 @@ class TabControllerTest {
     void saveTab_success() throws Exception {
         SaveTabRequest request = new SaveTabRequest();
         request.setTitle("Сохраняемая таба");
-        request.setGenreId(1L);
-        request.setSignature("4/4");
-        request.setChordProgression(List.of(List.of("C", 1)));
-        request.setTabData(List.of(List.of(1,2,3,4)));
-
-        when(tabRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(tabRepository.findById(anyLong())).thenReturn(Optional.empty());
+		request.setGenreId(1L);
+		request.setSignature("4/4");
+		request.setMusicKey(0);
+		request.setBpm(140);
+		request.setChordProgression("C-1,G-1,F-1,Am-1");
+		request.setTabData("Табулатура");
+		request.setAudioData("base-64");
 
         mockMvc.perform(post("/tabs")
-                .header("Authorization", "Bearer " + TOKEN)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+            .header("Authorization", "Bearer " + TOKEN)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated());
+
+        var tabs = tabRepository.findByUser(currentUser);
+        var created = tabs.stream()
+            .filter(t -> "Сохраняемая таба".equals(t.getTitle()))
+            .findFirst();
+
+        if (created.isPresent()) {
+            Path uploadDir = Paths.get("src/test/resources/test-tabs");
+            Path filePath = uploadDir.resolve(created.get().getAudioUrl());
+            Files.deleteIfExists(filePath);
+            tabRepository.delete(created.get());
+        }
     }
 
     @Test
     @DisplayName("Сохранение табулатуры: пользователь не авторизован")
     void saveTab_fail_unauthorized() throws Exception {
         SaveTabRequest request = new SaveTabRequest();
-        request.setTitle("Сохраняемая таба");
-        request.setGenreId(1L);
-        request.setSignature("4/4");
-        request.setChordProgression(List.of(List.of("C", 1)));
-        request.setTabData(List.of(List.of(1,2,3,4)));
+		request.setTitle("Сохраняемая таба");
+		request.setGenreId(1L);
+		request.setSignature("4/4");
+		request.setMusicKey(0);
+		request.setBpm(140);
+		request.setChordProgression("C-1,G-1,F-1,Am-1");
+		request.setTabData("Табулатура");
+		request.setAudioData("base-64");
 
         mockMvc.perform(post("/tabs")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -287,59 +273,69 @@ class TabControllerTest {
     @DisplayName("Сохранение табулатуры: невалидное поле tab_data")
     void saveTab_fail_validationFail() throws Exception {
         SaveTabRequest request = new SaveTabRequest();
-        request.setTitle("Сохраняемая таба");
-        request.setGenreId(1L);
-        request.setSignature("4/4");
-        request.setChordProgression(List.of(List.of("C", 1)));
-        request.setTabData(Collections.emptyList());
+		request.setTitle("Сохраняемая таба");
+		request.setGenreId(1L);
+		request.setSignature("4/4");
+		request.setMusicKey(0);
+		request.setBpm(140);
+		request.setChordProgression("C-1,G-1,F-1,Am-1");
+		request.setTabData("");
+		request.setAudioData("base-64");
 
         mockMvc.perform(post("/tabs")
                 .header("Authorization", "Bearer " + TOKEN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("tabData: Данные табулатуры обязательны"));
+            .andExpect(jsonPath("$.message").value("tabData: Табулатура обязательна"));
     }
 
     @Test
     @DisplayName("Удаление табулатуры: успех")
     void deleteTab_success() throws Exception {
-        Tab tab = new Tab();
-        tab.setId(11L);
-        tab.setUser(currentUser);
+        Path uploadDir = Paths.get("src/test/resources/test-tabs");
+        try {
+            Files.createDirectories(uploadDir);
+        } catch (Exception ignored) {}
 
-        when(tabRepository.findById(11L)).thenReturn(Optional.of(tab));
+        String filename = UUID.randomUUID() + ".b64";
+        Path filePath = uploadDir.resolve(filename);
+        Files.writeString(filePath, "test-audio-data");
 
-        mockMvc.perform(delete("/tabs/11")
-                .header("Authorization", "Bearer " + TOKEN))
+        Tab tab = Tab.builder()
+            .user(currentUser)
+            .genre(genreRepository.findById(1L).orElseThrow())
+            .title("to-delete")
+            .chordProgression("C-1")
+            .musicKey(0)
+            .signature("4/4")
+            .bpm(100)
+            .tabData("x")
+            .audioUrl(filename)
+            .createdAt(OffsetDateTime.now())
+            .build();
+
+        tab = tabRepository.save(tab);
+
+        mockMvc.perform(delete("/tabs/" + tab.getId())
+            .header("Authorization", "Bearer " + TOKEN))
             .andExpect(status().isNoContent());
+        Files.deleteIfExists(filePath);
     }
 
     @Test
     @DisplayName("Удаление табулатуры: несуществующий id")
     void deleteTab_fail_notFound() throws Exception {
-        when(tabRepository.findById(20L)).thenReturn(Optional.empty());
-
-        mockMvc.perform(delete("/tabs/20")
-                .header("Authorization", "Bearer " + TOKEN))
+        mockMvc.perform(delete("/tabs/999")
+            .header("Authorization", "Bearer " + TOKEN))
             .andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("Удаление табулатуры: доступ запрещен")
     void deleteTab_fail_forbidden() throws Exception {
-        Tab tab = new Tab();
-        tab.setId(9L);
-        tab.setUser(com.alexey.tabgenerator.entity.User.builder()
-            .id(8L)
-            .username("other")
-            .email("other@mail.ru")
-            .build()
-        );
 
-        when(tabRepository.findById(9L)).thenReturn(Optional.of(tab));
-
-        mockMvc.perform(delete("/tabs/9")
+        mockMvc.perform(delete("/tabs/4")
                 .header("Authorization", "Bearer " + TOKEN))
             .andExpect(status().isForbidden());
     }

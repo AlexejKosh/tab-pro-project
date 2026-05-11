@@ -40,10 +40,10 @@ class JwtServiceTest {
     @BeforeEach
     void setUp() {
         testUser = User.builder()
-            .id(6L)
-            .username("alexeyKo")
-            .email("miner_847@mail.ru")
-            .passwordHash("$2a$10$qswLlgNFa5uxuOG.inhPkOU/oGkgPfJfJEz5z7x6wIc9yXSzh9aim")
+            .id(1L)
+            .username("testUser1")
+            .email("testuser1@mail.ru")
+            .passwordHash("$2a$10$OomqQ6A0HEpAcBkvzD2ebeCLF4L/qXGUWwumAFov.Mzha77srmsQy")
             .build();
     }
 
@@ -83,7 +83,7 @@ class JwtServiceTest {
     void isTokenValid_fail_tokenInvalidForAnotherUser() {
         String token = jwtService.generateToken(testUser);
         UserDetails userDetails = userDetailsService.
-            loadUserByUsername("alina_orlova");
+            loadUserByUsername("alexeyTest");
 
         assertFalse(jwtService.isTokenValid(token, userDetails),
             "Токен не должен быть валиден для другого пользователя"

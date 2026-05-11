@@ -36,10 +36,10 @@ class UserRepositoryTest {
     @Test
     @DisplayName("Поиск пользователя по id: успех")
     void findById_success() {
-        Optional<User> user = userRepository.findById(6L);
+        Optional<User> user = userRepository.findById(3L);
 
         assertThat(user).isPresent();
-        assertThat(user.get().getUsername()).isEqualTo("alexeyKo");
+        assertThat(user.get().getUsername()).isEqualTo("goodTester");
     }
 
     @Test
@@ -83,10 +83,10 @@ class UserRepositoryTest {
     @Test
     @DisplayName("Поиск пользователя по username: успех")
     void findByUsername_success() {
-        Optional<User> user = userRepository.findByUsername("alexeyKo");
+        Optional<User> user = userRepository.findByUsername("testUser1");
 
         assertThat(user).isPresent();
-        assertThat(user.get().getEmail()).isEqualTo("miner_847@mail.ru");
+        assertThat(user.get().getEmail()).isEqualTo("testuser1@mail.ru");
     }
 
     @Test
@@ -101,10 +101,10 @@ class UserRepositoryTest {
     @Test
     @DisplayName("Поиск пользователя по email: успех")
     void findByEmail_success() {
-        Optional<User> user = userRepository.findByEmail("lololol.llko@gmail.com");
+        Optional<User> user = userRepository.findByEmail("alexeytest@mail.ru");
 
         assertThat(user).isPresent();
-        assertThat(user.get().getUsername()).isEqualTo("BigKing57");
+        assertThat(user.get().getUsername()).isEqualTo("alexeyTest");
     }
 
     @Test
@@ -119,7 +119,7 @@ class UserRepositoryTest {
     @DisplayName("Поиск пользователя по username или email: успех (username)")
     void findByUsernameOrEmail_success_username() {
         Optional<User> user =
-            userRepository.findByUsernameOrEmail("alexeyKo", "something@mail.com");
+            userRepository.findByUsernameOrEmail("alexeyTest", "something@mail.com");
 
         assertThat(user).isPresent();
     }
@@ -128,7 +128,7 @@ class UserRepositoryTest {
     @DisplayName("Поиск пользователя по username или email: успех (email)")
     void findByUsernameOrEmail_success_email() {
         Optional<User> user =
-            userRepository.findByUsernameOrEmail("something", "lololol.llko@gmail.com");
+            userRepository.findByUsernameOrEmail("something", "testuser1@mail.ru");
 
         assertThat(user).isPresent();
     }
@@ -145,7 +145,7 @@ class UserRepositoryTest {
     @Test
     @DisplayName("Проверка существования по username: существует")
     void existsByUsername_true() {
-        boolean exists = userRepository.existsByUsername("alexeyKo");
+        boolean exists = userRepository.existsByUsername("testUser1");
 
         assertThat(exists).isTrue();
     }
@@ -161,7 +161,7 @@ class UserRepositoryTest {
     @Test
     @DisplayName("Проверка существования по email: существует")
     void existsByEmail_true() {
-        boolean exists = userRepository.existsByEmail("miner_847@mail.ru");
+        boolean exists = userRepository.existsByEmail("testuser1@mail.ru");
 
         assertThat(exists).isTrue();
     }

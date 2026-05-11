@@ -61,18 +61,18 @@ class UserControllerTest {
     @BeforeEach
     void setup() {
         UserDetails userDetails = User
-            .withUsername("alexeyKo")
+            .withUsername("testUser1")
             .password("encoded")
             .authorities("ROLE_USER")
             .build();
 
         when(jwtService.extractUsername(TOKEN))
-            .thenReturn("alexeyKo");
+            .thenReturn("testUser1");
         when(jwtService.isTokenValid(anyString(), any()))
             .thenReturn(true);
         when(jwtService.buildAuthentication(userDetails))
             .thenCallRealMethod();
-        when(userDetailsService.loadUserByUsername("alexeyKo"))
+        when(userDetailsService.loadUserByUsername("testUser1"))
             .thenReturn(userDetails);
     }
 
@@ -83,8 +83,8 @@ class UserControllerTest {
         mockMvc.perform(get("/users/me")
                 .header("Authorization", "Bearer " + TOKEN))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.username").value("alexeyKo"))
-            .andExpect(jsonPath("$.email").value("miner_847@mail.ru"));
+            .andExpect(jsonPath("$.username").value("testUser1"))
+            .andExpect(jsonPath("$.email").value("testuser1@mail.ru"));
     }
 
     @Test
@@ -99,7 +99,7 @@ class UserControllerTest {
     @DisplayName("Смена пароля: успех")
     void changePassword_success() throws Exception {
         ChangePasswordRequest request = new ChangePasswordRequest();
-        request.setOldPassword("qwerty123");
+        request.setOldPassword("qwerty12");
         request.setNewPassword("newPassword123");
 
         mockMvc.perform(put("/users/password")

@@ -14,9 +14,12 @@ spring:
   sql:
     init:
       mode: embedded
-      data-locations: classpath:data.sql
+      data-locations: classpath:test-data.sql
       schema-locations: classpath:/test-schema.sql
 
   h2:
     console:
       enabled: false
+
+file:
+  upload-dir: src/test/resources/test-tabs

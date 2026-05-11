@@ -36,7 +36,7 @@ class GenreRepositoryTest {
         Optional<Genre> genre = genreRepository.findById(1L);
 
         assertThat(genre).isPresent();
-        assertThat(genre.get().getName()).isEqualTo("Rock");
+        assertThat(genre.get().getName()).isEqualTo("Blues");
     }
 
     @Test
@@ -55,14 +55,14 @@ class GenreRepositoryTest {
         assertThat(genres).hasSize(3);
         assertThat(genres)
             .extracting(Genre::getName)
-            .containsExactlyInAnyOrder("Rock", "Blues", "Funk");
+            .containsExactlyInAnyOrder("Rock", "Blues", "Metal");
     }
 
     @Test
     @DisplayName("Сохранение нового жанра: успех")
     void save_success() {
         Genre genre = Genre.builder()
-            .name("Metal")
+            .name("Funk")
             .build();
         Genre savedGenre = genreRepository.save(genre);
 
@@ -71,7 +71,7 @@ class GenreRepositoryTest {
         Optional<Genre> fromDb = genreRepository.findById(savedGenre.getId());
 
         assertThat(fromDb).isPresent();
-        assertThat(fromDb.get().getName()).isEqualTo("Metal");
+        assertThat(fromDb.get().getName()).isEqualTo("Funk");
     }
 
     @Test

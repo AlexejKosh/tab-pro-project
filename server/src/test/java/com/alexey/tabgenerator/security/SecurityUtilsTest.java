@@ -45,7 +45,7 @@ class SecurityUtilsTest {
     @Test
     @DisplayName("Получение текущего пользователя: успех")
     void getCurrentUser_success() {
-        String username = "alexeyKo";
+        String username = "testUser1";
         var authToken = new UsernamePasswordAuthenticationToken(
             username,
             null,

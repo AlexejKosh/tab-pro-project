@@ -32,11 +32,12 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser() {
 
-        log.debug("Получение информации о текущем пользователе");
-
         User user = securityUtils.getCurrentUser();
 
-        log.info("Информация о текущем пользователе успешно получена: username={}", user.getUsername());
+        log.debug(
+            "Полученена информация о текущем пользователе: username={}",
+            user.getUsername()
+        );
 
         return UserResponse.fromEntity(user);
     }
@@ -50,7 +51,10 @@ public class UserService {
 
         User user = securityUtils.getCurrentUser();
 
-        log.debug("Попытка смены пароля для пользователя: username={}", user.getUsername());
+        log.debug(
+            "Попытка смены пароля: username={}",
+            user.getUsername()
+        );
 
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
             throw new UnauthorizedException("Старый пароль указан неверно");
@@ -59,7 +63,10 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        log.info("Пароль успешно изменён для пользователя: username={}", user.getUsername());
+        log.info(
+            "Пароль успешно изменён: username={}",
+            user.getUsername()
+        );
     }
 
     /**
@@ -68,12 +75,18 @@ public class UserService {
     @Transactional
     public void deleteCurrentUser() {
 
-        log.debug("Удаление текущего пользователя");
-
         User user = securityUtils.getCurrentUser();
+
+        log.debug(
+            "Попытка удаления пользователя: username={}",
+            user.getUsername()
+        );
 
         userRepository.delete(user);
 
-        log.info("Пользователь успешно удалён: username={}", user.getUsername());
+        log.warn(
+            "Пользователь удалён: username={}",
+            user.getUsername()
+        );
     }
 }

@@ -3,7 +3,8 @@ package com.alexey.tabgenerator.service;
 import com.alexey.tabgenerator.dto.request.GenerateTabRequest;
 import com.alexey.tabgenerator.dto.request.SaveTabRequest;
 import com.alexey.tabgenerator.dto.response.GenerateResponse;
-import com.alexey.tabgenerator.dto.response.TabResponse;
+import com.alexey.tabgenerator.dto.response.TabSummaryResponse;
+import com.alexey.tabgenerator.dto.response.MlServerGenerateResponse;
 import com.alexey.tabgenerator.entity.Genre;
 import com.alexey.tabgenerator.entity.Tab;
 import com.alexey.tabgenerator.entity.User;
@@ -23,8 +24,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -47,9 +52,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TabServiceTest {
 
-    // Мок репозитория для сущности Tab, поскольку
-    // H2 некорректно работает с JSONB, из-за чего
-    // доступ к БД изолируется
+    // Мок репозитория для сущности Tab
     @Mock
     private TabRepository tabRepository;
 
@@ -75,6 +78,8 @@ class TabServiceTest {
     private Genre mockGenre;
     private Tab mockTab;
 
+    private final Path testUploadDir = Paths.get("src/test/resources/test-tabs");
+
     @BeforeEach
     void setUp() {
         mockUser = User.builder()
@@ -93,8 +98,11 @@ class TabServiceTest {
             .genre(mockGenre)
             .title("Test Tab")
             .signature("4/4")
-            .chordProgression(List.of(List.of("C", 3)))
-            .tabData(List.of(List.of(0, 1, 2, 5)))
+            .musicKey(0)
+            .bpm(120)
+            .chordProgression("C-1,G-1")
+            .tabData("TAB_DATA")
+            .audioUrl("test-audio.b64")
             .createdAt(OffsetDateTime.now())
             .build();
     }
@@ -105,7 +113,7 @@ class TabServiceTest {
         when(securityUtils.getCurrentUser()).thenReturn(mockUser);
         when(tabRepository.findByUser(mockUser)).thenReturn(List.of(mockTab));
 
-        List<TabResponse> result = tabService.getAllTabs();
+        List<TabSummaryResponse> result = tabService.getAllTabs();
 
         assertEquals(1, result.size());
         assertEquals("Test Tab", result.get(0).getTitle());
@@ -113,13 +121,26 @@ class TabServiceTest {
 
     @Test
     @DisplayName("Получение табулатуры по id: успех")
-    void testGetTabById_success() {
+    void testGetTabById_success() throws Exception {
         when(securityUtils.getCurrentUser()).thenReturn(mockUser);
         when(tabRepository.findById(100L)).thenReturn(Optional.of(mockTab));
 
-        TabResponse response = tabService.getTabById(100L);
+        Path tempDir = Files.createTempDirectory("tabservice-get-");
+        try {
+            ReflectionTestUtils.setField(tabService, "uploadDirPath", tempDir.toString());
 
-        assertEquals("Test Tab", response.getTitle());
+            Path audioFile = tempDir.resolve(mockTab.getAudioUrl());
+            Files.writeString(audioFile, "AUDIO_BASE64_DATA");
+
+            com.alexey.tabgenerator.dto.response.TabResponse response = tabService.getTabById(100L);
+
+            assertEquals("Test Tab", response.getTitle());
+            assertEquals("AUDIO_BASE64_DATA", response.getAudioData());
+
+        } finally {
+            Files.deleteIfExists(tempDir.resolve(mockTab.getAudioUrl()));
+            Files.deleteIfExists(tempDir);
+        }
     }
 
     @Test
@@ -147,31 +168,39 @@ class TabServiceTest {
     @DisplayName("Генерация табулатуры: успех")
     void testGenerateTab_success() {
         GenerateTabRequest request = new GenerateTabRequest();
-        request.setTitle("Generated Tab");
         request.setGenreId(10L);
         request.setSignature("4/4");
-        request.setChordProgression(List.of(List.of("C", "G")));
+        request.setMusicKey(0);
+        request.setBpm(120);
+        request.setChordProgression("C-1,G-1");
 
         when(genreRepository.findById(10L)).thenReturn(Optional.of(mockGenre));
-        when(mlClient.generateTab(anyString(), anyList(), anyString(), anyLong()))
-            .thenReturn(List.of(List.of(0, 1, 2)));
+
+        MlServerGenerateResponse mlResponse = new MlServerGenerateResponse();
+        mlResponse.setTabData("GENERATED_TAB_DATA");
+        mlResponse.setAudioData("GENERATED_AUDIO_DATA");
+
+        when(mlClient.generateTab(any(GenerateTabRequest.class))).thenReturn(mlResponse);
 
         GenerateResponse response = tabService.generateTab(request);
 
-        assertEquals("Generated Tab", response.getTitle());
         assertEquals(10L, response.getGenreId());
-        assertNotNull(response.getTabData());
+        assertEquals("GENERATED_TAB_DATA", response.getTabData());
+        assertEquals("GENERATED_AUDIO_DATA", response.getAudioData());
     }
 
     @Test
     @DisplayName("Сохранение табулатуры: успех")
-    void testSaveTab_success() {
+    void testSaveTab_success() throws Exception {
         SaveTabRequest request = new SaveTabRequest();
         request.setTitle("New Tab");
         request.setGenreId(10L);
         request.setSignature("4/4");
-        request.setChordProgression(List.of(List.of("C", "G")));
-        request.setTabData(List.of(List.of(0, 1, 2)));
+        request.setMusicKey(0);
+        request.setBpm(100);
+        request.setChordProgression("C-1,G-1");
+        request.setTabData("TAB_CONTENT");
+        request.setAudioData("AUDIO_BASE64");
 
         when(securityUtils.getCurrentUser()).thenReturn(mockUser);
         when(genreRepository.findById(10L)).thenReturn(Optional.of(mockGenre));
@@ -181,20 +210,51 @@ class TabServiceTest {
             return tab;
         });
 
-        tabService.saveTab(request);
+        Path tempDir = Files.createTempDirectory("tabservice-save-");
+        try {
+            ReflectionTestUtils.setField(tabService, "uploadDirPath", tempDir.toString());
 
-        verify(tabRepository).save(any(Tab.class));
+            tabService.saveTab(request);
+            boolean found = Files.list(tempDir)
+                .anyMatch(p -> {
+                    try {
+                        return Files.readString(p).equals("AUDIO_BASE64");
+                    } catch (Exception e) {
+                        return false;
+                    }
+                });
+
+            assertTrue(found);
+            verify(tabRepository).save(any(Tab.class));
+
+        } finally {
+            Files.list(tempDir).forEach(p -> { try { Files.deleteIfExists(p); } catch (Exception ignored) {} });
+            Files.deleteIfExists(tempDir);
+        }
     }
 
     @Test
     @DisplayName("Удаление табулатуры: успех")
-    void testDeleteTab_success() {
+    void testDeleteTab_success() throws Exception {
         when(securityUtils.getCurrentUser()).thenReturn(mockUser);
         when(tabRepository.findById(100L)).thenReturn(Optional.of(mockTab));
 
-        tabService.deleteTab(100L);
+        Path tempDir = Files.createTempDirectory("tabservice-del-");
+        try {
+            ReflectionTestUtils.setField(tabService, "uploadDirPath", tempDir.toString());
 
-        verify(tabRepository).delete(mockTab);
+            Path audioFile = tempDir.resolve(mockTab.getAudioUrl());
+            Files.writeString(audioFile, "TO_DELETE");
+
+            tabService.deleteTab(100L);
+
+            assertFalse(Files.exists(audioFile));
+            verify(tabRepository).delete(mockTab);
+
+        } finally {
+            Files.list(tempDir).forEach(p -> { try { Files.deleteIfExists(p); } catch (Exception ignored) {} });
+            Files.deleteIfExists(tempDir);
+        }
     }
 
     @Test

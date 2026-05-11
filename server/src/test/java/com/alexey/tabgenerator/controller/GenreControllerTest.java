@@ -48,7 +48,7 @@ class GenreControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(2))
-            .andExpect(jsonPath("$.name").value("Blues"));
+            .andExpect(jsonPath("$.name").value("Metal"));
     }
 
     @Test

@@ -1,12 +1,8 @@
 package com.alexey.tabgenerator.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 /**
  * DTO для запроса генерации новой табулатуры через ML-сервер.
@@ -15,15 +11,24 @@ import java.util.List;
 @Setter
 public class GenerateTabRequest {
 
-    @NotBlank(message = "Название табулатуры обязательно")
-    private String title;
-
     @NotNull(message = "ID жанра обязателен")
     private Long genreId;
 
     @NotBlank(message = "Музыкальный размер обязателен")
     private String signature;
 
-    @NotEmpty(message = "Последовательность аккордов обязательна")
-    private List<List<Object>> chordProgression;
+    @NotNull(message = "Тональность обязательна")
+    @Min(0)
+    @Max(11)
+    private Integer musicKey;
+
+    @NotNull(message = "BPM обязателен")
+    @Min(50)
+    @Max(200)
+    private Integer bpm;
+
+    @NotBlank(message = "Последовательность аккордов обязательна")
+    private String chordProgression;
+
+    private String ip;
 }

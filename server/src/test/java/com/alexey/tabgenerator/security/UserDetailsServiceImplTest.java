@@ -32,7 +32,7 @@ class UserDetailsServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        existingUsername = "alexeyKo";
+        existingUsername = "testUser1";
         nonExistingUsername = "nonexistentUser";
     }
 

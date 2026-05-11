@@ -1,12 +1,9 @@
 package com.alexey.tabgenerator.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 /**
  * DTO для запроса сохранения табулатуры пользователя в базе.
@@ -24,9 +21,18 @@ public class SaveTabRequest {
     @NotBlank(message = "Музыкальный размер обязателен")
     private String signature;
 
-    @NotEmpty(message = "Последовательность аккордов обязательна")
-    private List<List<Object>> chordProgression;
+    @NotNull(message = "Тональность обязательна")
+    private Integer musicKey;
 
-    @NotEmpty(message = "Данные табулатуры обязательны")
-    private List<List<Integer>> tabData;
+    @NotNull(message = "BPM обязателен")
+    private Integer bpm;
+
+    @NotBlank(message = "Последовательность аккордов обязательна")
+    private String chordProgression;
+
+    @NotBlank(message =  "Табулатура обязательна")
+    private String tabData;
+
+    @NotBlank(message = "Аудио-данные обязательны")
+    private String audioData;
 }

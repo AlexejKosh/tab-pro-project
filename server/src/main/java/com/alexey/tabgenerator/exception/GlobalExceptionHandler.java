@@ -4,6 +4,7 @@ import com.alexey.tabgenerator.dto.response.ErrorResponse;
 
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -54,12 +55,30 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Обработка PasswordMismatchException (400 Bad Request)
+     */
+    @ExceptionHandler(PasswordMismatchException.class)
+    public ResponseEntity<ErrorResponse> handlePasswordMismatchException(PasswordMismatchException ex) {
+        log.warn("Ошибка 'пароли не совпадают': {}", ex.getMessage());
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Обработка TokenExpiredException (400 Bad Request)
+     */
+    @ExceptionHandler(TokenExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleTokenExpiredException(TokenExpiredException ex) {
+        log.warn("Ошибка 'срок действия токена истёк': {}", ex.getMessage());
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
      * Обработка ошибок ML сервера (502 Bad Gateway)
      */
     @ExceptionHandler(MlServerException.class)
     public ResponseEntity<ErrorResponse> handleMlServerException(MlServerException ex) {
-        log.error("Ошибка 'ML сервер': {}", ex.getMessage());
-        return buildResponse(ex.getMessage(), HttpStatus.BAD_GATEWAY);
+        log.error("Ошибка ML сервера: {}", ex.getMessage());
+        return buildResponse(ex.getMessage(), ex.getStatus());
     }
 
     /**
@@ -81,19 +100,12 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Обработка JsonConversionException (500 Internal Server Error)
-     */
-    @ExceptionHandler(JsonConversionException.class)
-    public ResponseEntity<ErrorResponse> handleJsonConversionException(JsonConversionException ex) {
-        log.error("Ошибка 'преобразование JSON': {}", ex.getMessage());
-        return buildResponse(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    /**
      * Обработка InvalidJwtTokenException (401 Unauthorized)
      */
     @ExceptionHandler(InvalidJwtTokenException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidJwtTokenException(InvalidJwtTokenException ex) {
+    public ResponseEntity<ErrorResponse> handleInvalidJwtTokenException(
+        InvalidJwtTokenException ex
+    ) {
         log.warn("Ошибка проверки JWT: {}", ex.getMessage());
         return buildResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED);
     }
@@ -107,6 +119,15 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Ошибка 'слишком много запросов для генерации с одного IP': {}", ex.getMessage());
         return buildResponse(ex.getMessage(), HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    /**
+     * Обработка FileStorageException (500 Internal Server Error)
+     */
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ErrorResponse> handleFileStorageException(FileStorageException ex) {
+        log.error("Ошибка работы с файловым хранилищем: {}", ex.getMessage());
+        return buildResponse(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     // -------------------- Обработка стандартных исключений Jakarta / Spring --------------------
@@ -150,6 +171,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
         log.warn("Ошибка 'метод не разрешён': {}", ex.getMessage());
         return buildResponse(ex.getMessage(), HttpStatus.METHOD_NOT_ALLOWED);
+    }
+
+    /**
+     * Некорректный запрос (400 Method Not Allowed)
+     */
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex) {
+        log.warn("Ошибка 'некорректный запрос': {}", ex.getMessage());
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     /**

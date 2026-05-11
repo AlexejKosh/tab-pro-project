@@ -1,18 +1,17 @@
 package com.alexey.tabgenerator.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 
 /**
  * Сущность табулатуры.
- * Хранит информацию о конкретной табулатуре пользователя: аккорды,
+ * Хранит информацию о конкретной табулатуре пользователя: название, аккорды, BPM,
  * музыкальный размер, данные табулатуры, дату создания и связи с пользователем и жанром.
  */
 @Entity
@@ -41,17 +40,31 @@ public class Tab {
     @NotBlank(message = "Название обязательно")
     private String title;
 
+    @Column(name = "chord_progression", nullable = false, columnDefinition = "TEXT")
+    @NotBlank(message = "Аккордовая последовательность обязательна")
+    private String chordProgression;
+
+    @Column(name = "music_key", nullable = false)
+    @Min(0)
+    @Max(11)
+    private Integer musicKey;
+
     @Column(length = 5, nullable = false)
     @NotBlank(message = "Размер обязателен")
     private String signature;
 
-    @Column(name = "chord_progression", nullable = false)
-    @JdbcTypeCode(SqlTypes.JSON)
-    private List<List<Object>> chordProgression;
+    @Column(nullable = false)
+    @Min(50)
+    @Max(200)
+    private Integer bpm;
 
-    @Column(name = "tab_data", nullable = false)
-    @JdbcTypeCode(SqlTypes.JSON)
-    private List<List<Integer>> tabData;
+    @Column(name = "tab_data", nullable = false, columnDefinition = "TEXT")
+    @NotBlank(message = "Табулатура не может быть пустой")
+    private String tabData;
+
+    @Column(name = "audio_url", nullable = false, length = 255)
+    @NotBlank(message = "Ссылка на аудио обязательна")
+    private String audioUrl;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

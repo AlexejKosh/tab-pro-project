@@ -4,6 +4,7 @@ import com.alexey.tabgenerator.dto.request.ChangePasswordRequest;
 import com.alexey.tabgenerator.dto.response.UserResponse;
 import com.alexey.tabgenerator.service.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,14 +28,15 @@ public class UserController {
      * Получение информации о текущем авторизованном пользователе.
      */
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getCurrentUser() {
+    public ResponseEntity<UserResponse> getCurrentUser(
+        HttpServletRequest httpRequest
+    ) {
 
-        log.debug("Запрос информации для текущего пользователя");
+        log.debug("[{}] Запрос информации для текущего пользователя",
+            httpRequest.getRemoteAddr()
+        );
 
         UserResponse response = userService.getCurrentUser();
-
-        log.info("Запрос информации для текущего пользователя успешно обработан: username={}",
-            response.getUsername());
 
         return ResponseEntity.ok(response);
     }
@@ -44,14 +46,15 @@ public class UserController {
      */
     @PutMapping("/password")
     public ResponseEntity<Void> changePassword(
-        @Valid @RequestBody ChangePasswordRequest request
+        @Valid @RequestBody ChangePasswordRequest request,
+        HttpServletRequest httpRequest
     ) {
 
-        log.debug("Запрос на смену пароля");
+        log.debug("[{}] Запрос на смену пароля",
+            httpRequest.getRemoteAddr()
+        );
 
         userService.changePassword(request);
-
-        log.info("Запрос на смену пароля успешно обработан");
 
         return ResponseEntity.ok().build();
     }
@@ -60,13 +63,15 @@ public class UserController {
      * Удаление аккаунта текущего пользователя.
      */
     @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteCurrentUser() {
+    public ResponseEntity<Void> deleteCurrentUser(
+        HttpServletRequest httpRequest
+    ) {
 
-        log.debug("Запрос на удаление текущего пользователя");
+        log.debug("[{}] Запрос на удаление текущего пользователя",
+            httpRequest.getRemoteAddr()
+        );
 
         userService.deleteCurrentUser();
-
-        log.info("Запрос на удаление текущего пользователя успешно обработан");
 
         return ResponseEntity.noContent().build();
     }

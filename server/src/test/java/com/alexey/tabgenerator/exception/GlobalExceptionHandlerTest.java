@@ -69,7 +69,7 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("Обработка MlServer: ошибка ML сервера")
     void handleMlServerException_badGateway() {
-        MlServerException ex = new MlServerException("Ошибка ML сервера");
+        MlServerException ex = new MlServerException("Ошибка ML сервера", HttpStatus.BAD_GATEWAY);
         ResponseEntity<?> resp = handler.handleMlServerException(ex);
 
         assertEquals(HttpStatus.BAD_GATEWAY, resp.getStatusCode());
@@ -87,6 +87,46 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("Обработка PasswordMismatch: пароли не совпадают")
+    void handlePasswordMismatchException_badRequest() {
+        PasswordMismatchException ex = new PasswordMismatchException("Пароли не совпадают");
+        ResponseEntity<?> resp = handler.handlePasswordMismatchException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+        assertEquals("Пароли не совпадают", ((ErrorResponse)resp.getBody()).getMessage());
+    }
+
+    @Test
+    @DisplayName("Обработка TokenExpired: токен просрочен")
+    void handleTokenExpiredException_badRequest() {
+        TokenExpiredException ex = new TokenExpiredException("Токен просрочен");
+        ResponseEntity<?> resp = handler.handleTokenExpiredException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+        assertEquals("Токен просрочен", ((ErrorResponse)resp.getBody()).getMessage());
+    }
+
+    @Test
+    @DisplayName("Обработка FileStorage: ошибка работы с файловым хранилищем")
+    void handleFileStorageException_internalServerError() {
+        FileStorageException ex = new FileStorageException("Ошибка FS");
+        ResponseEntity<?> resp = handler.handleFileStorageException(ex);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
+        assertEquals("Ошибка FS", ((ErrorResponse)resp.getBody()).getMessage());
+    }
+
+    @Test
+    @DisplayName("Обработка BadRequest: некорректный запрос")
+    void handleBadRequestException_badRequest() {
+        org.apache.coyote.BadRequestException ex = new org.apache.coyote.BadRequestException("Некорректный запрос");
+        ResponseEntity<?> resp = handler.handleBadRequestException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+        assertEquals("Некорректный запрос", ((ErrorResponse)resp.getBody()).getMessage());
+    }
+
+    @Test
     @DisplayName("Обработка Forbidden: доступ запрещен")
     void handleForbiddenException_forbidden() {
         ForbiddenException ex = new ForbiddenException("Доступ к ресурсу запрещен");
@@ -94,16 +134,6 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.FORBIDDEN, resp.getStatusCode());
         assertEquals("Доступ к ресурсу запрещен", ((ErrorResponse)resp.getBody()).getMessage());
-    }
-
-    @Test
-    @DisplayName("Обработка JsonConversion: ошибка обработки JSON")
-    void handleJsonConversionException_internalServerError() {
-        JsonConversionException ex = new JsonConversionException("Ошибка обработки JSON");
-        ResponseEntity<?> resp = handler.handleJsonConversionException(ex);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
-        assertEquals("Ошибка обработки JSON", ((ErrorResponse)resp.getBody()).getMessage());
     }
 
     @Test
