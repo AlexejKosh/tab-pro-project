@@ -74,12 +74,9 @@ def encode_rhythm(rhythm_string, signature, tune_difference=0):
             if denominator not in allowed_denominators:
                 raise ValueError(f"Недопустимый знаменатель: {denominator}")
 
-            duration = numerator / denominator
+            num_subdivisions = int(numerator * TICKS_PER_BEAT * signature / BASE_TIME_SIGNATURE // denominator)
         else:
-            duration = int(duration_text)
-
-        # Количество временных шагов (1/48 доля)
-        num_subdivisions = int(duration * TICKS_PER_BEAT // BASE_TIME_SIGNATURE * signature)
+            num_subdivisions = int(int(duration_text) * TICKS_PER_BEAT // BASE_TIME_SIGNATURE * signature)
 
         # Бинарное представление аккорда (12 полутонов)
         encoded_chord = [0] * CHROMATIC_SCALE_SIZE

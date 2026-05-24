@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -124,7 +125,7 @@ public class AuthService {
             String token = UUID.randomUUID().toString();
             PasswordResetToken resetToken = PasswordResetToken.builder()
                 .user(user)
-                .token(token)
+                .token(DigestUtils.sha256Hex(token))
                 .expiresAt(OffsetDateTime.now().plusMinutes(30))
                 .build();
 
@@ -134,6 +135,9 @@ public class AuthService {
             log.info(
                 "Токен восстановления создан и отправлен: userId={}",
                 user.getId()
+            );
+            log.info(
+                "{}", token
             );
 
             message = "Ссылка для восставноления пароля отправлена на почту.";
@@ -157,10 +161,13 @@ public class AuthService {
         String token
     ) {
 
+        log.debug("Проверка валидности токена сброса пароля: tokenHash={}",
+            DigestUtils.sha256Hex(token));
+
         passwordResetTokenRepository.deleteByExpiresAtBefore(OffsetDateTime.now());
 
         PasswordResetToken resetToken =
-            passwordResetTokenRepository.findByToken(token).orElse(null);
+            passwordResetTokenRepository.findByToken(DigestUtils.sha256Hex(token)).orElse(null);
 
         return new CheckRecoverPasswordTokenResponse(resetToken != null);
     }
@@ -174,7 +181,7 @@ public class AuthService {
 
         log.debug("Попытка сброса пароля по токену");
 
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(DigestUtils.sha256Hex(token))
             .orElseThrow(() -> new NotFoundException("Токен не найден"));
 
         if (resetToken.getExpiresAt().isBefore(OffsetDateTime.now())) {

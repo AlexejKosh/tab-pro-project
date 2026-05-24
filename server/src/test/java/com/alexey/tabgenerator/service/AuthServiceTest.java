@@ -15,6 +15,7 @@ import com.alexey.tabgenerator.dto.request.NewPasswordRequest;
 import com.alexey.tabgenerator.exception.NotFoundException;
 import com.alexey.tabgenerator.exception.TokenExpiredException;
 import com.alexey.tabgenerator.exception.PasswordMismatchException;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.mockito.ArgumentCaptor;
 import com.alexey.tabgenerator.security.JwtService;
 
@@ -180,17 +181,24 @@ class AuthServiceTest {
         doNothing().when(passwordResetTokenRepository).deleteByUser(any());
         when(passwordResetTokenRepository.save(any(PasswordResetToken.class)))
             .thenAnswer(i -> i.getArgument(0));
-        doNothing().when(emailService).sendPasswordRecovery(anyString(), anyString());
+
+        ArgumentCaptor<String> emailTokenCaptor = ArgumentCaptor.forClass(String.class);
+        doNothing().when(emailService).sendPasswordRecovery(anyString(), emailTokenCaptor.capture());
 
         RecoverPasswordResponse response = authService.sendRecoverPasswordMail(request);
 
         assertEquals("Ссылка для восставноления пароля отправлена на почту.", response.getMessage());
 
-        ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);
-        verify(passwordResetTokenRepository).save(captor.capture());
-        PasswordResetToken saved = captor.getValue();
+        String sentToken = emailTokenCaptor.getValue();
 
-        verify(emailService).sendPasswordRecovery(eq(mockUser.getEmail()), eq(saved.getToken()));
+        ArgumentCaptor<PasswordResetToken> dbTokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
+        verify(passwordResetTokenRepository).save(dbTokenCaptor.capture());
+
+        PasswordResetToken savedEntity = dbTokenCaptor.getValue();
+        String expectedHash = DigestUtils.sha256Hex(sentToken);
+
+        assertEquals(expectedHash, savedEntity.getToken());
+        verify(emailService).sendPasswordRecovery(eq(mockUser.getEmail()), eq(sentToken));
     }
 
     @Test
@@ -212,18 +220,25 @@ class AuthServiceTest {
     void checkRecoverPasswordToken() {
         doNothing().when(passwordResetTokenRepository).deleteByExpiresAtBefore(any());
 
+        String token1 = "tok-1";
+        String token2 = "tok-2";
+
         PasswordResetToken tokenEntity = PasswordResetToken.builder()
-            .token("tok-1")
+            .token(token1)
             .expiresAt(OffsetDateTime.now().plusMinutes(10))
             .user(mockUser)
             .build();
 
-        when(passwordResetTokenRepository.findByToken("tok-1")).thenReturn(Optional.of(tokenEntity));
+        when(passwordResetTokenRepository.
+            findByToken(DigestUtils.sha256Hex(token1))).
+            thenReturn(Optional.of(tokenEntity));
 
         var resp = authService.checkRecoverPasswordToken("tok-1");
         assertEquals(Boolean.TRUE, resp.getValid());
 
-        when(passwordResetTokenRepository.findByToken("tok-2")).thenReturn(Optional.empty());
+        when(passwordResetTokenRepository.
+            findByToken(DigestUtils.sha256Hex(token2))).
+            thenReturn(Optional.empty());
         var resp2 = authService.checkRecoverPasswordToken("tok-2");
         assertEquals(Boolean.FALSE, resp2.getValid());
     }
@@ -235,17 +250,21 @@ class AuthServiceTest {
         newPass.setPassword1("newpass");
         newPass.setPassword2("newpass");
 
+        String token = "good-token";
+
         PasswordResetToken tokenEntity = PasswordResetToken.builder()
-            .token("good-token")
+            .token(token)
             .expiresAt(OffsetDateTime.now().plusMinutes(10))
             .user(mockUser)
             .build();
 
-        when(passwordResetTokenRepository.findByToken("good-token")).thenReturn(Optional.of(tokenEntity));
+        when(passwordResetTokenRepository.
+            findByToken(DigestUtils.sha256Hex(token))).
+            thenReturn(Optional.of(tokenEntity));
         when(passwordEncoder.encode("newpass")).thenReturn("encodedNew");
         when(userRepository.save(any(User.class))).thenReturn(mockUser);
 
-        authService.recoverPassword(newPass, "good-token");
+        authService.recoverPassword(newPass, token);
 
         verify(passwordEncoder).encode("newpass");
         verify(userRepository).save(mockUser);
@@ -259,9 +278,13 @@ class AuthServiceTest {
         newPass.setPassword1("a");
         newPass.setPassword2("a");
 
-        when(passwordResetTokenRepository.findByToken("no-token")).thenReturn(Optional.empty());
+        String token = "no-token";
 
-        assertThrows(NotFoundException.class, () -> authService.recoverPassword(newPass, "no-token"));
+        when(passwordResetTokenRepository
+            .findByToken(DigestUtils.sha256Hex(token)))
+            .thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> authService.recoverPassword(newPass, token));
     }
 
     @Test
@@ -271,13 +294,17 @@ class AuthServiceTest {
         newPass.setPassword1("a");
         newPass.setPassword2("a");
 
+        String token = "expired";
+
         PasswordResetToken tokenEntity = PasswordResetToken.builder()
-            .token("expired")
+            .token(token)
             .expiresAt(OffsetDateTime.now().minusMinutes(1))
             .user(mockUser)
             .build();
 
-        when(passwordResetTokenRepository.findByToken("expired")).thenReturn(Optional.of(tokenEntity));
+        when(passwordResetTokenRepository
+            .findByToken(DigestUtils.sha256Hex(token)))
+            .thenReturn(Optional.of(tokenEntity));
 
         assertThrows(TokenExpiredException.class, () -> authService.recoverPassword(newPass, "expired"));
     }
@@ -289,14 +316,16 @@ class AuthServiceTest {
         newPass.setPassword1("one");
         newPass.setPassword2("two");
 
+        String token = "good";
+
         PasswordResetToken tokenEntity = PasswordResetToken.builder()
-            .token("good")
+            .token(token)
             .expiresAt(OffsetDateTime.now().plusMinutes(10))
             .user(mockUser)
             .build();
 
-        when(passwordResetTokenRepository.findByToken("good")).thenReturn(Optional.of(tokenEntity));
+        when(passwordResetTokenRepository.findByToken(DigestUtils.sha256Hex(token))).thenReturn(Optional.of(tokenEntity));
 
-        assertThrows(PasswordMismatchException.class, () -> authService.recoverPassword(newPass, "good"));
+        assertThrows(PasswordMismatchException.class, () -> authService.recoverPassword(newPass, token));
     }
 }

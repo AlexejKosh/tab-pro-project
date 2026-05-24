@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль</title>
+    <link rel="icon" href="/img/icon.png" type="image/png">
+    <link rel="stylesheet" href="./styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <a href="home-page.html" class="logo">
+            <img src="./img/logo.png" alt="Logo">
+        </a>
+        <a href="profile.html" class="header-profile-text">AlexeyKo</a>
+    </header>
+
+    <main class="main main--usual-page">
+        <a href="tabs.html" class="form-link">На главную</a>
+        <h1 class="main-title main-title--usual-page">Профиль</h1>
+        <h2 class="profile-username">AlexeyKo</h2>
+        <p class="main-text"><b>Email:</b> alexey.kosh@yandex.ru</p>
+        <p class="main-text"><b>Имя пользователя:</b> AlexeyKo</p>
+        <p class="main-text"><b>Дата создания профиля:</b> 10.01.2025 <i>(уже 412 дней вместе с нами)</i></p>
+        <form class="profile-change-password-form">
+            <p class="main-text"><b>Изменить пароль</b></p>
+            <div class="input-wrapper">
+                <input type="password" class="form-input" placeholder="Текущий пароль" required>
+            </div>
+            <div class="input-wrapper">
+                <input type="password" class="form-input" placeholder="Новый пароль" required>
+            </div>
+            <div class="input-wrapper">
+                <input type="password" class="form-input" placeholder="Повторите пароль" required>
+            </div>
+            <button type="submit" class="authorization-form-button">Изменить пароль</button>
+        </form>
+        <button class="authorization-form-button logout-button" onclick="window.location='home-page-guest.html'">Выйти из профиля</button>
+        <button class="profile-delete-button">Удалить профиль</button>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="home-page.html">Главная страница</a>
+            <a href="generate-form.html">Генерация табулатуры</a>
+            <a href="about.html">О проекте</a>
+        </div>
+        <span class="footer-copy">Кошелев Алексей, гр. 4321-22, 2026 г.</span>
+    </footer>
+
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal-window">
+            <button class="modal-close-button">&times;</button>
+            <h2 class="modal-title">
+                Удаление профиля
+            </h2>
+            <p class="modal-text">
+                Вы действительно хотите удалить профиль?<br>
+                Это действие нельзя отменить.
+            </p>
+            <button
+                class="profile-delete-button"
+                onclick="window.location='home-page-guest.html'"
+            >
+                Удалить профиль
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const deleteButton =
+            document.querySelector(".profile-delete-button");
+        const modal =
+            document.getElementById("delete-modal");
+        const closeButton =
+            document.querySelector(".modal-close-button");
+        function openModal() {
+            modal.classList.add("active");
+        }
+        function closeModal() {
+            modal.classList.remove("active");
+        }
+        deleteButton.addEventListener(
+            "click",
+            openModal
+        );
+        closeButton.addEventListener(
+            "click",
+            closeModal
+        );
+        modal.addEventListener(
+            "click",
+            (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            }
+        );
+        document.addEventListener(
+            "keydown",
+            (e) => {
+                if (e.key === "Escape") {
+                    closeModal();
+                }
+            }
+        );
+        </script>
+</body>
+</html>

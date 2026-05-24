@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход</title>
+    <link rel="icon" href="/img/icon.png" type="image/png">
+    <link rel="stylesheet" href="./styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <a href="home-page-guest.html" class="logo">
+            <img src="./img/logo.png" alt="Logo">
+        </a>
+        <a href="login.html" class="header-profile-text">Войти</a>
+    </header>
+
+    <main class="main">
+        <section class="authorization-form">
+            <h2 class="authorization-form-title">Вход в аккаунт</h2>
+            <form action="home-page.html" method="GET">
+                <div class="input-wrapper">
+                    <img src="./img/email.png" class="input-icon">
+                    <input type="text" class="form-input login-form--username" placeholder="Имя пользователя/e-mail" required>
+                </div>
+                <div class="input-wrapper">
+                    <img src="./img/lock.png" class="input-icon password">
+                    <input type="password" class="form-input login-form--password" placeholder="Пароль" required>
+                </div>
+                <a href="forgot-password.html" class="form-link forgot-password-link">Забыли пароль?</a>
+                <button type="submit" class="authorization-form-button">Войти</button>
+                <span class="authorization-form-text">Нет аккаунта? <a href="register.html" class="form-link">Создать его</a></span>
+            </form>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="home-page-guest.html">Главная страница</a>
+            <a href="generate-form.html">Генерация табулатуры</a>
+            <a href="about.html">О проекте</a>
+        </div>
+        <span class="footer-copy">Кошелев Алексей, гр. 4321-22, 2026 г.</span>
+    </footer>
+</body>
+</html>

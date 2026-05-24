@@ -4,6 +4,7 @@ import com.alexey.tabgenerator.dto.request.ChangePasswordRequest;
 import com.alexey.tabgenerator.dto.response.UserResponse;
 import com.alexey.tabgenerator.entity.User;
 import com.alexey.tabgenerator.exception.UnauthorizedException;
+import com.alexey.tabgenerator.repository.TabRepository;
 import com.alexey.tabgenerator.repository.UserRepository;
 import com.alexey.tabgenerator.security.SecurityUtils;
 
@@ -40,6 +41,14 @@ class UserServiceTest {
     // взаимодействие с БД
     @Mock
     private UserRepository userRepository;
+
+    // Мок репозитория для сущности Tab, чтобы изолировать
+    // взаимодействие с БД
+    @Mock
+    private TabRepository tabRepository;
+
+    @Mock
+    private TabService tabService;
 
     // Мок кодировщика паролей, чтобы
     // не выполнять реальное хеширование
@@ -94,8 +103,10 @@ class UserServiceTest {
 
         UserService us = new UserService(
             userRepository,
+            tabRepository,
             passwordEncoder,
-            new SecurityUtils(userRepository)
+            new SecurityUtils(userRepository),
+            tabService
         );
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, us::getCurrentUser);
 
@@ -160,8 +171,10 @@ class UserServiceTest {
 
         UserService us = new UserService(
             userRepository,
+            tabRepository,
             passwordEncoder,
-            new SecurityUtils(userRepository)
+            new SecurityUtils(userRepository),
+            tabService
         );
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, us::deleteCurrentUser);
 

@@ -41,6 +41,9 @@ logging:
 file:
   upload-dir: uploads/audio/tabs
 
+client-host:
+  adress: ${CLIENT_HOST}
+
 ml:
   base-url: ${ML_BASE_URL}
   generate-endpoint: ${ML_GENERATE_ENDPOINT}

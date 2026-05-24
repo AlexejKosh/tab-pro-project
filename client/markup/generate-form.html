@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генерация табулатуры</title>
+    <link rel="icon" href="/img/icon.png" type="image/png">
+    <link rel="stylesheet" href="./styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <a href="home-page.html" class="logo">
+            <img src="./img/logo.png" alt="Logo">
+        </a>
+        <a href="profile.html" class="header-profile-text">AlexeyKo</a>
+    </header>
+
+    <main class="main main--usual-page">
+        <a href="home-page.html" class="form-link">На главную</a>
+        <form class="generate-form" action="generate-wait.html" method="GET">
+            <div class="generate-form-top">
+                <div class="form-group">
+                    <h2 class="form-title">Жанр</h2>
+                    <div class="genre-buttons">
+                        <input
+                            type="radio"
+                            id="blues"
+                            name="genre"
+                            value="blues"
+                            hidden
+                        >
+                        <label for="blues" class="genre-button">
+                            Блюз
+                        </label>
+                        <input
+                            type="radio"
+                            id="rock"
+                            name="genre"
+                            value="rock"
+                            checked
+                            hidden
+                        >
+                        <label for="rock" class="genre-button">
+                            Рок
+                        </label>
+                        <input
+                            type="radio"
+                            id="metal"
+                            name="genre"
+                            value="metal"
+                            hidden
+                        >
+                        <label for="metal" class="genre-button">
+                            Метал
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <h2 class="form-title">Размер</h2>
+                    <div class="signature-buttons">
+                        <input
+                            type="radio"
+                            id="three-four"
+                            name="signature"
+                            value="3/4"
+                            hidden
+                        >
+                        <label for="three-four" class="signature-button">
+                            3/4
+                        </label>
+                        <input
+                            type="radio"
+                            id="four-four"
+                            name="signature"
+                            value="4/4"
+                            checked
+                            hidden
+                        >
+                        <label for="four-four" class="signature-button">
+                            4/4
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <h2 class="form-title">Тональность</h2>
+                <select name="tonality" id="tonality" class="tonality-input">
+                    <option value="0">C/Am</option>
+                    <option value="1">Db/Bbm</option>
+                    <option value="2">D/Bm</option>
+                    <option value="3">Eb/Cm</option>
+                    <option value="4">E/C#m</option>
+                    <option value="5">F/Dm</option>
+                    <option value="6">F#/Ebm</option>
+                    <option value="7">G/Em</option>
+                    <option value="8">Ab/Fm</option>
+                    <option value="9">A/F#m</option>
+                    <option value="10">Bb/Gm</option>
+                    <option value="11">B/G#m</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <h2 class="form-title">Темп (BPM):
+                    <span id="bpm-current">
+                        <b>120</b>
+                    </span>
+                </h2>
+                <div class="bpm-container">
+                    <span class="bpm-value">50</span>
+                    <input
+                        type="range"
+                        id="bpm-slider"
+                        class="bpm-slider"
+                        min="50"
+                        max="200"
+                        value="120"
+                    >
+                    <span class="bpm-value">200</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <h2 class="form-title">
+                    Последовательность аккордов
+                </h2>
+                <textarea
+                    class="generate-textarea"
+                    placeholder="Введите ритм-партию..."
+                ></textarea>
+            </div>
+            <button class="generate-button">
+                Сгенерировать
+            </button>
+        </form>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="home-page.html">Главная страница</a>
+            <a href="profile.html">Профиль</a>
+            <a href="about.html">О проекте</a>
+        </div>
+        <span class="footer-copy">Кошелев Алексей, гр. 4321-22, 2026 г.</span>
+    </footer>
+
+    <script>
+        const bpmSlider = document.getElementById("bpm-slider");
+        const bpmCurrent = document.getElementById("bpm-current");
+
+        bpmSlider.addEventListener("input", () => {
+            bpmCurrent.textContent = bpmSlider.value;
+        });
+    </script>
+</body>
+</html>

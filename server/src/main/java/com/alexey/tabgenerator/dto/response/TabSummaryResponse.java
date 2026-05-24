@@ -21,7 +21,7 @@ public class TabSummaryResponse {
 
     private Long genreId;
 
-    private Integer musicKey;
+    private String chordProgression;
 
     private OffsetDateTime createdAt;
 
@@ -34,7 +34,7 @@ public class TabSummaryResponse {
             .title(tab.getTitle())
             .signature(tab.getSignature())
             .genreId(tab.getGenre().getId())
-            .musicKey(tab.getMusicKey())
+            .chordProgression(tab.getChordProgression())
             .createdAt(tab.getCreatedAt())
             .build();
     }

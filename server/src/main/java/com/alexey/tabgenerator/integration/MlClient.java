@@ -58,7 +58,7 @@ public class MlClient {
                 );
             }
 
-            log.info("Успешно получен ответ от ML сервера: musicKey={}, genreId{}, bpm={}",
+            log.info("Успешно получен ответ от ML сервера: musicKey={}, genreId={}, bpm={}",
                 request.getMusicKey(), request.getGenreId(), request.getBpm());
 
             return response;

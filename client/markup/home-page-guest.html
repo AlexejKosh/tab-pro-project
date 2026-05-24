@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная страница</title>
+    <link rel="icon" href="/img/icon.png" type="image/png">
+    <link rel="stylesheet" href="./styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <a href="home-page-guest.html" class="logo">
+            <img src="./img/logo.png" alt="Logo">
+        </a>
+        <a href="login.html" class="header-profile-text">Войти</a>
+    </header>
+
+    <main class="main">
+        <section class="banner banner--hero">
+            <div class="banner-particles"></div>
+            <div class="banner-content">
+                <h2 class="banner-title">
+                    Генерация соло
+                </h2>
+                <p class="banner-description">
+                    Создавайте гитарные соло на основе аккордов: всего лишь
+                    выберите стиль, а платформа с помощью искусственного
+                    интеллекта сгенерирует табулатуру.
+                </p>
+            </div>
+        </section>
+        <section class="banners">
+            <a href="generate-form.html" class="banner banner--start">
+                <div class="banner-particles"></div>
+                <div class="banner-content">
+                    <h2 class="banner-title">Быстрый старт</h2>
+                    <p class="banner-description">
+                        Генерация табулатур без регистрации – 
+                        оцените возможности платформы за пару кликов
+                    </p>
+                </div>
+            </a>
+            <a href="login.html" class="banner banner--account">
+                <div class="banner-particles"></div>
+                <div class="banner-content">
+                    <h2 class="banner-title">Личный кабинет</h2>
+                    <p class="banner-description">
+                        Зарегистрируйтесь, чтобы сохранять табулатуры 
+                        и возвращаться к ним в любое время
+                    </p>
+                </div>
+            </a>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="register.html">Регистрация</a>
+            <a href="generate-form.html">Генерация табулатуры</a>
+            <a href="about.html">О проекте</a>
+        </div>
+        <span class="footer-copy">Кошелев Алексей, гр. 4321-22, 2026 г.</span>
+    </footer>
+    <script>
+        const interactiveSections = document.querySelectorAll('.banner');
+
+        interactiveSections.forEach(section => {
+            const container = section.querySelector('.banner-particles');
+            let interval;
+
+            section.addEventListener('mousemove', (e) => {
+                const rect = section.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width;
+                const y = (e.clientY - rect.top) / rect.height;
+                const moveX = (0.5 - x) * 25;
+                const moveY = (0.5 - y) * 25;
+                section.style.setProperty('--move-x', moveX + 'px');
+                section.style.setProperty('--move-y', moveY + 'px');
+            });
+
+            function createParticle() {
+                if (!container) return;
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particle.style.left = Math.random() * 100 + '%';
+                const size = Math.random() * 4 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                const duration = Math.random() * 3 + 2;
+                particle.style.animationDuration = duration + 's';
+                container.appendChild(particle);
+                setTimeout(() => particle.remove(), duration * 1000);
+            }
+
+            section.addEventListener('mouseenter', () => {
+                interval = setInterval(createParticle, 60);
+            });
+
+            section.addEventListener('mouseleave', () => {
+                clearInterval(interval);
+                section.style.setProperty('--move-x', '0px');
+                section.style.setProperty('--move-y', '0px');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сохранённые табулатуры</title>
+    <link rel="icon" href="/img/icon.png" type="image/png">
+    <link rel="stylesheet" href="./styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <a href="home-page.html" class="logo">
+            <img src="./img/logo.png" alt="Logo">
+        </a>
+        <a href="profile.html" class="header-profile-text">AlexeyKo</a>
+    </header>
+
+    <main class="main main--usual-page">
+        <a href="home-page.html" class="form-link">На главную</a>
+        <h1 class="main-title main-title--usual-page">Сохранённые табулатуры</h1>
+        <textarea class="generate-textarea generate-textarea--search" placeholder="Поиск..."></textarea>
+        <div class="tabs-sort">
+            <span class="main-text"><b>Сортировать: </b></span>
+            <select class="tabs-sort-select">
+                <option>по дате</option>
+                <option>по названию</option>
+                <option>по жанру</option>
+            </select>
+        </div>
+        <table class="tabs-table">
+            <thead>
+                <tr>
+                    <th class="title-cell">Название</th>
+                    <th class="date-cell">Дата</th>
+                    <th class="signature-cell">Размер</th>
+                    <th class="genre-cell">Жанр</th>
+                    <th class="chords-cell">Аккорды</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr onclick="window.location='tab.html'" class="tabs-table-row">
+                    <td class="title-cell">Точно что-то интересное</td>
+                    <td class="date-cell">01.02.2026</td>
+                    <td class="signature-cell">4/4</td>
+                    <td class="genre-cell">Рок</td>
+                    <td class="chords-cell">C-1/2,C-1/2,Dm7-1/4,Dm7-1/4,E7-1/4,E7-1/4,F-1/2,F-1/2,G-1/2,G-1/2,C-1/2,C-1/2,Dm7-1/4,Dm7-1/4,E7-1/4,E7-1/4,F-1/2,F-1/2,G-1/2,G-1/2,C-1</td>
+                </tr>
+                <tr onclick="window.location='tab.html'" class="tabs-table-row">
+                    <td class="title-cell">Для песни похожей на Битлз</td>
+                    <td class="date-cell">28.01.2026</td>
+                    <td class="signature-cell">4/4</td>
+                    <td class="genre-cell">Рок</td>
+                    <td class="chords-cell">G7-1/4,D7-1/4,C7-1/4,E7-1/4,C7-1/4,C7-1/4,C7-1/4,C7-1/4,G7-1/4,D7-1/4,C7-1/4,E7-1/4,D7-1/4,D7-1/4,D7-1/4,D7-1/4,G7-1/4,D7-1/4,C7-1/4,E7-1/4,C7-1/4,C7-1/4,C7-1/4,C7-1/4,G7-1/4,D7-1/4,C7-1/4,E7-1/4,D7-1/4,D7-1/4,D7-1/4,D7-1/4,G-1</td>
+                </tr>
+                <tr onclick="window.location='tab.html'" class="tabs-table-row">
+                    <td class="title-cell">Попытка написать метал</td>
+                    <td class="date-cell">10.01.2026</td>
+                    <td class="signature-cell">3/4</td>
+                    <td class="genre-cell">Метал</td>
+                    <td class="chords-cell">E5-1/16,E5-1/16,F5-1/16,E5-1/16,E5-1/16,F5-1/16,E5-1/16,E5-1/16,F5-1/16,E5-1/16,E5-1/16,F5-1/16,E5-1/16,E5-1/16,B5-1/16,B5-1/16,E5-1/16,E5-1/16,F5-1/16,E5-1/16,E5-1/16,F5-1/16,E5-1/16,E5-１/１６,F５-１１６，Ｅ５－１／１６，Ｅ５－１／１６，Ｂｍ－１／８，Ｅ５－１／１６，Ｅ５－１／１６，Ｆ５－１／１６，Ｅ５－１／１６，Ｅ５－１／１６，Ｆ５－１／１６，Ｅ５－１／１６，Ｅ５－１／１６，Ｆ５－１／１６，Ｅ５－１／１６，Ｅ５－１／１６，Ｆ５－１／１６，Ｅ５－１／１６，Ｅ５－１／１６，Ｂｍ－１／８</td>
+                </tr>
+                <tr onclick="window.location='tab.html'" class="tabs-table-row">
+                    <td class="title-cell">12 Тактовый блюз</td>
+                    <td class="date-cell">30.12.2025</td>
+                    <td class="signature-cell">4/4</td>
+                    <td class="genre-cell">Блюз</td>
+                    <td class="chords-cell">Bbmaj7-1/4,Bbmaj7-1/4,Bbmaj7-1/4,Bb7-1/4,Bb7-1/4,Bb7-1/4,Bb7-1/4,Bb6-1/4,Bb6-1/4,Bb6-1/4,Bb6-1/4,Bb-1/4,Bb-1/4,Bb-1/4,Bb-1/4,Ebmaj7-1/4,Ebmaj7-1/4,Eb7-1/4,Eb7-1/4,Eb6-1/4,Eb6-1/4,Eb-1/4,Eb-1/4,Bbmaj7-1/4,Bbmaj7-1/4,Bb7-1/4,Bb7-1/4,Bb6-1/4,Bb6-1/4,Bb-1/4,Bb-1/4,F-1/4,F-1/4,F6-1/4,F6-1/4,Eb6-1/4,Eb6-1/4,Eb-1/4,Eb-1/4,Bbmaj7-1/4,Bbmaj7-1/4,Bb7-1/4,Bb7-1/4,Bb6-1/4,Bb6-1/4,Bb6-1/４,Gm7-１</td>
+                </tr>
+                <tr onclick="window.location='tab.html'" class="tabs-table-row">
+                    <td class="title-cell">На репетицию с ребятами</td>
+                    <td class="date-cell">17.12.2025</td>
+                    <td class="signature-cell">3/4</td>
+                    <td class="genre-cell">Блюз</td>
+                    <td class="chords-cell">Cm7-1,Ab7-1,Eb7-1,G7-1,Cm7-1/3,Cm7-1/3,Cm7-1/3,Ab7-1/3,Ab7-1/3,Ab7-1/3,Eb7-1/3,Eb7-1/3,Eb7-1/3,G7-1/3,G7-1/3,G7-1/3,Gm6-5/6,Gsus4-1/6,Fm7-1,Cm6-5/6,Csus2-1/6,Bb7-1,Gm6-5/6,Gsus4-1/6,Fm7-1,Cm6-5/6,Csus2-1/6,Bb7-1,Cm-1</td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="home-page.html">Главная страница</a>
+            <a href="profile.html">Профиль</a>
+            <a href="about.html">О проекте</a>
+        </div>
+        <span class="footer-copy">Кошелев Алексей, гр. 4321-22, 2026 г.</span>
+    </footer>
+</body>
+</html>

@@ -22,6 +22,8 @@ public class EmailService {
 
     @Value("${spring.mail.username}")
     private String fromEmail;
+    @Value("${client-host.adress}")
+    private String adress;
 
     /**
      * Отправка письма с новым паролем пользователю.
@@ -37,7 +39,7 @@ public class EmailService {
         message.setSubject("Восстановление пароля на TabGen");
         message.setText(
             "Ваша ссылка на восстановление пароля: \n" +
-                "http://localhost:8081/auth/recover-password/" + token +
+                "http://%s/reset-password/".formatted(adress) + token +
                 "\n\nЖелаем всего наилучшего!"
         );
 

@@ -4,6 +4,7 @@ import com.alexey.tabgenerator.dto.request.ChangePasswordRequest;
 import com.alexey.tabgenerator.security.JwtService;
 import com.alexey.tabgenerator.security.UserDetailsServiceImpl;
 
+import com.alexey.tabgenerator.service.TabService;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +56,9 @@ class UserControllerTest {
 
     @MockitoBean
     private UserDetailsServiceImpl userDetailsService;
+
+    @MockitoBean
+    private TabService tabService;
 
     private static final String TOKEN = "mock-token";
 

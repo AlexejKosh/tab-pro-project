@@ -11,6 +11,7 @@ import com.alexey.tabgenerator.repository.UserRepository;
 import com.alexey.tabgenerator.service.EmailService;
 
 import jakarta.transaction.Transactional;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
+import org.mockito.ArgumentCaptor;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
@@ -198,23 +201,21 @@ class AuthControllerTest {
 
         String email = "testuser1@mail.ru";
 
-        // 1. Запускаем процесс восстановления
         RecoverPasswordRequest request = new RecoverPasswordRequest();
         request.setEmail(email);
+        ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
 
-        doNothing().when(emailService)
-            .sendPasswordRecovery(anyString(), anyString());
+        doNothing().when(emailService).
+            sendPasswordRecovery(anyString(), tokenCaptor.capture());
 
         mockMvc.perform(post("/auth/recover-password")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk());
 
-        // 2. Получаем пользователя
         User user = userRepository.findByEmail(email)
             .orElseThrow();
 
-        // 3. Достаём реальный токен из H2
         PasswordResetToken tokenEntity = passwordResetTokenRepository.findAll()
             .stream()
             .filter(t -> t.getUser().getId().equals(user.getId()))
@@ -222,11 +223,9 @@ class AuthControllerTest {
             .orElseThrow();
 
         String token = tokenEntity.getToken();
+        String capturedToken = tokenCaptor.getValue();
 
-        // 4. Проверяем токен через контроллер
-        mockMvc.perform(get("/auth/recover-password/{token}", token))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.valid").value(true));
+        assertThat(DigestUtils.sha256Hex(capturedToken)).isEqualTo(token);
     }
 
     @Test
@@ -247,8 +246,10 @@ class AuthControllerTest {
         RecoverPasswordRequest request = new RecoverPasswordRequest();
         request.setEmail(email);
 
-        doNothing().when(emailService)
-            .sendPasswordRecovery(anyString(), anyString());
+        ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
+
+        doNothing().when(emailService).
+            sendPasswordRecovery(anyString(), tokenCaptor.capture());
 
         mockMvc.perform(post("/auth/recover-password")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -264,9 +265,9 @@ class AuthControllerTest {
             .findFirst()
             .orElseThrow();
 
-        String token = tokenEntity.getToken();
+        String capturedToken = tokenCaptor.getValue();
 
-        mockMvc.perform(get("/auth/recover-password/{token}", token))
+        mockMvc.perform(get("/auth/recover-password/{token}", capturedToken))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.valid").value(true));
 
@@ -274,7 +275,7 @@ class AuthControllerTest {
         newPass.setPassword1("newPassword123");
         newPass.setPassword2("newPassword123");
 
-        mockMvc.perform(post("/auth/recover-password/{token}", token)
+        mockMvc.perform(post("/auth/recover-password/{token}", capturedToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(newPass)))
             .andExpect(status().isNoContent());
@@ -289,8 +290,10 @@ class AuthControllerTest {
         RecoverPasswordRequest request = new RecoverPasswordRequest();
         request.setEmail(email);
 
-        doNothing().when(emailService)
-            .sendPasswordRecovery(anyString(), anyString());
+        ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
+
+        doNothing().when(emailService).
+            sendPasswordRecovery(anyString(), tokenCaptor.capture());
 
         mockMvc.perform(post("/auth/recover-password")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -306,9 +309,9 @@ class AuthControllerTest {
             .findFirst()
             .orElseThrow();
 
-        String token = tokenEntity.getToken();
+        String capturedToken = tokenCaptor.getValue();
 
-        mockMvc.perform(get("/auth/recover-password/{token}", token))
+        mockMvc.perform(get("/auth/recover-password/{token}", capturedToken))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.valid").value(true));
 
@@ -316,7 +319,7 @@ class AuthControllerTest {
         newPass.setPassword1("password1");
         newPass.setPassword2("password2");
 
-        mockMvc.perform(post("/auth/recover-password/{token}", token)
+        mockMvc.perform(post("/auth/recover-password/{token}", capturedToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest());

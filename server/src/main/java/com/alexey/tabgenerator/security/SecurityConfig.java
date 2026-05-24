@@ -38,6 +38,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
+            .cors(cors -> {})
             // Отключение CSRF, так как API stateless
             .csrf(AbstractHttpConfigurer::disable)
             // Stateless сессии: сервер не хранит состояние пользователя
@@ -52,6 +53,9 @@ public class SecurityConfig {
             )
             // Настройка прав доступа к эндпоинтам
             .authorizeHttpRequests(auth -> auth
+                // Разрешить preflight запросы
+                .requestMatchers(HttpMethod.OPTIONS, "/**")
+                .permitAll()
                 // Доступно без авторизации
                 .requestMatchers(HttpMethod.POST,
                     "/auth/register",
