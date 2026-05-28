@@ -16,6 +16,14 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Интеграционные тесты для {@link PasswordResetTokenRepository}.
+ *
+ * Проверяют работу пользовательских методов репозитория:
+ * - поиск токена по значению
+ * - удаление просроченных токенов
+ * - удаление токенов пользователя
+ */
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional

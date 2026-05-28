@@ -15,15 +15,15 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Unit-тесты для {@link TabRepository}.
+ * Интеграционные тесты для {@link UserRepository}.
  *
  * Проверяют работу стандартных методов JPA:
- * - поиск табулатур
- * - сохранение новой табулатуры
- * - удаление табулатуры
+ * - поиск пользователей
+ * - сохранение нового пользователя
+ * - удаление пользователя
  *
  * А также пользовательские методы репозитория:
- * - поиск табов по пользователю
+ * - поиск пользователей по username или email
  */
 @SpringBootTest
 @ActiveProfiles("test")

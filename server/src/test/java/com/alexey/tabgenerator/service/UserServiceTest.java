@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Интеграционные тесты для {@link UserService}
+ * Unit-тесты для {@link UserService}
  *
  * Проверяют:
  * - получение текущего пользователя

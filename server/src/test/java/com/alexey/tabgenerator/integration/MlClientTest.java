@@ -25,6 +25,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit-тесты для {@link MlClient}.
+ *
+ * Проверяют:
+ * - успешную генерацию табулатуры
+ * - обработку различных ошибок при взаимодействии с ML сервером
+ */
 @ExtendWith(MockitoExtension.class)
 class MlClientTest {
 

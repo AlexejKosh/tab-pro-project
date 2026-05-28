@@ -3,76 +3,58 @@ package com.alexey.tabgenerator.repository;
 import com.alexey.tabgenerator.entity.Tab;
 import com.alexey.tabgenerator.entity.User;
 import com.alexey.tabgenerator.entity.Genre;
-import org.junit.jupiter.api.BeforeEach;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
- * Unit-тесты для {@link TabRepository}.
+ * Интеграционные тесты для {@link TabRepository}.
  *
  * Проверяют работу стандартных методов JPA:
- * - поиск пользователя
- * - сохранение нового пользователя
- * - удаление пользователя
- *
+ * - поиск табулатур по id
+ * - получение всех табулатур
+ * - сохранение новой табулатуры
+ * - удаление табулатуры по id
+ * 
  * А также пользовательские методы репозитория:
- * - поиск по username
- * - поиск по email
- * - поиск по username или email
- * - проверка существования по username/email
+ * - поиск табулатур по пользователю
  */
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 class TabRepositoryTest {
 
+    @Autowired
     private TabRepository tabRepository;
 
-    private User user1;
-    private User user2;
+    @Autowired
+    private UserRepository userRepository;
 
-    private Genre rockGenre;
-    private Genre bluesGenre;
-
-    private Tab tab1;
-    private Tab tab2;
-    private Tab tab3;
-
-    @BeforeEach
-    void setup() {
-        tabRepository = mock(TabRepository.class);
-
-        user1 = User.builder().id(6L).username("alexeyKo").build();
-        user2 = User.builder().id(7L).username("alina_orlova").build();
-
-        rockGenre = Genre.builder().id(1L).name("Rock").build();
-        bluesGenre = Genre.builder().id(2L).name("Blues").build();
-
-        tab1 = Tab.builder().id(8L).user(user2).genre(rockGenre).title("Для будущего проекта").signature("4/4").build();
-        tab2 = Tab.builder().id(9L).user(user2).genre(rockGenre).title("Что-то темное").signature("3/4").build();
-        tab3 = Tab.builder().id(11L).user(user1).genre(bluesGenre).title("Типо Джеймс Браун").signature("4/4").build();
-    }
+    @Autowired
+    private GenreRepository genreRepository;
 
     @Test
     @DisplayName("Поиск табулатуры по id: успех")
     void findById_success() {
-        when(tabRepository.findById(8L)).thenReturn(Optional.of(tab1));
-
-        Optional<Tab> result = tabRepository.findById(8L);
+        Optional<Tab> result = tabRepository.findById(1L);
 
         assertThat(result).isPresent();
-        assertThat(result.get().getTitle()).isEqualTo("Для будущего проекта");
+        assertThat(result.get().getTitle()).isEqualTo("Что-то вроде Битлз");
     }
 
     @Test
     @DisplayName("Поиск табулатуры по id: несуществующий id")
     void findById_fail_notFound() {
-        when(tabRepository.findById(999L)).thenReturn(Optional.empty());
-
         Optional<Tab> result = tabRepository.findById(999L);
 
         assertThat(result).isEmpty();
@@ -81,36 +63,47 @@ class TabRepositoryTest {
     @Test
     @DisplayName("Получение всех табулатур: успех")
     void findAll_success() {
-        List<Tab> allTabs = List.of(tab1, tab2, tab3);
-        when(tabRepository.findAll()).thenReturn(allTabs);
-
         List<Tab> result = tabRepository.findAll();
 
-        assertThat(result).hasSize(3);
+        assertThat(result).hasSize(9);
         assertThat(result)
             .extracting(Tab::getTitle)
-            .containsExactlyInAnyOrder("Для будущего проекта", "Что-то темное", "Типо Джеймс Браун");
+            .contains("Что-то вроде Битлз", "В стиле Хэдфилда", "Точно Кинг");
     }
 
     @Test
     @DisplayName("Сохранение новой табулатуры: успех")
     void save_success() {
-        Tab newTab = Tab.builder().user(user1).genre(rockGenre).title("Новая табулатура").signature("4/4").build();
-        Tab savedTab = Tab.builder().id(20L).user(user1).genre(rockGenre).title("Новая табулатура").signature("4/4").build();
+        User user = userRepository.findById(1L).orElseThrow();
+        Genre genre = genreRepository.findById(3L).orElseThrow();
 
-        when(tabRepository.save(newTab)).thenReturn(savedTab);
+        Tab newTab = Tab.builder()
+            .user(user)
+            .genre(genre)
+            .title("Новая табулатура")
+            .signature("4/4")
+            .chordProgression("C-1")
+            .musicKey(0)
+            .bpm(100)
+            .tabData("test")
+            .audioUrl("url")
+            .build();
 
-        Tab result = tabRepository.save(newTab);
+        Tab saved = tabRepository.save(newTab);
 
-        assertThat(result.getId()).isEqualTo(20L);
-        assertThat(result.getTitle()).isEqualTo("Новая табулатура");
+        assertThat(saved.getId()).isNotNull();
+
+        Optional<Tab> fromDb = tabRepository.findById(saved.getId());
+        assertThat(fromDb).isPresent();
+        assertThat(fromDb.get().getTitle()).isEqualTo("Новая табулатура");
     }
 
     @Test
     @DisplayName("Удаление табулатуры по id: успех")
     void deleteById_success() {
-        tabRepository.deleteById(8L);
-        Optional<Tab> tab = tabRepository.findById(8L);
+        tabRepository.deleteById(1L);
+
+        Optional<Tab> tab = tabRepository.findById(1L);
 
         assertThat(tab).isEmpty();
     }
@@ -118,23 +111,28 @@ class TabRepositoryTest {
     @Test
     @DisplayName("Поиск табулатур по пользователю: успех (непустой список)")
     void findByUser_success() {
-        List<Tab> user2Tabs = List.of(tab1, tab2);
-        when(tabRepository.findByUser(user2)).thenReturn(user2Tabs);
+        User user = userRepository.findById(1L).orElseThrow();
 
-        List<Tab> result = tabRepository.findByUser(user2);
+        List<Tab> result = tabRepository.findByUser(user);
 
-        assertThat(result).hasSize(2);
+        assertThat(result).hasSize(3);
         assertThat(result)
             .extracting(Tab::getTitle)
-            .containsExactlyInAnyOrder("Для будущего проекта", "Что-то темное");
+            .containsExactlyInAnyOrder("Что-то вроде Битлз", "В стиле Хэдфилда", "Точно Кинг");
     }
 
     @Test
     @DisplayName("Поиск табулатур по пользователю: успех (пустой список)")
     void findByUser_success_emptyList() {
-        when(tabRepository.findByUser(user2)).thenReturn(List.of());
+        User newUser = User.builder()
+            .username("temp_user_for_test")
+            .email("temp_user_for_test@mail.ru")
+            .passwordHash("hash")
+            .build();
 
-        List<Tab> result = tabRepository.findByUser(user2);
+        User saved = userRepository.save(newUser);
+
+        List<Tab> result = tabRepository.findByUser(saved);
 
         assertThat(result).isEmpty();
     }
