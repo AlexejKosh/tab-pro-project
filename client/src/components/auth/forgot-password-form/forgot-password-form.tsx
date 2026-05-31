@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { sendRecoverPasswordMail } from "@/api/authApi";
 import { useUiStore } from "@/store/uiStore";
 import { ROUTES } from "@/router/routes";
+import { extractErrorMessage } from "@/utils/error";
 
 export default function ForgotPasswordForm() {
 	const [email, setEmail] = useState("");
@@ -37,10 +38,12 @@ export default function ForgotPasswordForm() {
 			});
 			navigate(ROUTES.LOGIN);
 		} catch (err: any) {
-			const msg = err?.response?.data?.message || "Не удалось отправить письмо.";
 			setMessage({
-				message: msg,
-				type: "error"
+				message: extractErrorMessage(
+					err,
+					"Не удалось отправить письмо.",
+				),
+				type: "error",
 			});
 		} finally {
 			setLoading(false);

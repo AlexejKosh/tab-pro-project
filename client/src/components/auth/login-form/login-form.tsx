@@ -8,6 +8,7 @@ import { useUiStore } from "@/store/uiStore";
 
 import lock from "@/assets/icons/lock.png";
 import email from "@/assets/icons/email.png";
+import { extractErrorMessage } from "@/utils/error";
 
 export default function LoginForm() {
     const [usernameOrEmail, setUsernameOrEmail] = useState("");
@@ -39,10 +40,12 @@ export default function LoginForm() {
             });
             navigate(ROUTES.HOME);
         } catch (err: any) {
-            const msg = err?.response?.data?.message || "Не удалось выполнить вход.";
-			setMessage({
-                message: msg,
-                type: "error"
+            setMessage({
+                message: extractErrorMessage(
+                    err,
+                    "Не удалось выполнить вход.",
+                ),
+                type: "error",
             });
         } finally {
             setLoading(false);

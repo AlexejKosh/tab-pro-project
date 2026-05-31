@@ -6,6 +6,7 @@ import { deleteCurrentUser } from "@/api/userApi";
 import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
 import { ROUTES } from "@/router/routes";
+import { extractErrorMessage } from "@/utils/error";
 
 interface Props {
 	isOpen: boolean;
@@ -43,10 +44,12 @@ export default function DeleteProfileModal({ isOpen, onClose }: Props) {
 			logout();
 			navigate(ROUTES.HOME);
 		} catch (err: any) {
-			const msg = err?.response?.data?.message || "Не удалось удалить профиль.";
 			setMessage({
-				message: msg,
-				type: "error"
+				message: extractErrorMessage(
+					err,
+					"Не удалось удалить профиль.",
+				),
+				type: "error",
 			});
 		} finally {
 			setLoading(false);

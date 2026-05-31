@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
 
 import type { RegisterRequest } from "@/types/auth";
+import { extractErrorMessage } from "@/utils/error";
 
 export default function RegisterForm() {
 	const [username, setUsername] = useState("");
@@ -60,10 +61,12 @@ export default function RegisterForm() {
 			});
 			navigate(ROUTES.HOME);
 		} catch (err: any) {
-			const msg = err?.response?.data?.message || "Не удалось выполнить регистрацию.";
 			setMessage({
-				message: msg,
-				type: "error"
+				message: extractErrorMessage(
+					err,
+					"Не удалось выполнить регистрацию.",
+				),
+				type: "error",
 			});
 		} finally {
 			setLoading(false);

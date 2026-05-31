@@ -13,6 +13,7 @@ import TabInfo from "@/components/tabs/tab-info/tab-info";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 
 import type { Genre } from "@/types/genre";
+import { extractErrorMessage } from "@/utils/error";
 
 type FormState = {
     genreId: number | null;
@@ -133,11 +134,12 @@ export default function GeneratePage() {
                 message: "Соло успешно сгенерировано.",
                 type: "success",
             });
-        } catch (error: any) {
-            const message =
-                error?.response?.data?.message ?? "Не удалось сгенерировать табулатуру.";
+        } catch (err: any) {
             setMessage({
-                message,
+                message: extractErrorMessage(
+                    err,
+                    "Не удалось сгенерировать табулатуру.",
+                ),
                 type: "error",
             });
         }
@@ -183,11 +185,12 @@ export default function GeneratePage() {
             setTabTitle("");
             reset();
             navigate("/tabs", { replace: true });
-        } catch (error: any) {
-            const message =
-            error?.response?.data?.message ?? "Не удалось сохранить табулатуру.";
+        } catch (err: any) {
             setMessage({
-                message,
+                message: extractErrorMessage(
+                    err,
+                    "Не удалось сохранить табулатуру.",
+                ),
                 type: "error",
             });
         }

@@ -642,14 +642,16 @@ textarea::-webkit-scrollbar-thumb {
     );
 }
 
-.change-theme-link {
+.change-theme-link,
+.download-button {
     all: unset;
     cursor: pointer;
     color: var(--header-bg-grad-1);
     transition: color 0.2s ease;
 }
 
-.change-theme-link:hover {
+.change-theme-link:hover,
+.download-button:hover {
     color: var(--light-text-color);
 }
 

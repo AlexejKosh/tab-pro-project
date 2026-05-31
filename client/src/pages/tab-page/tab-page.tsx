@@ -9,6 +9,7 @@ import { useUiStore } from "@/store/uiStore";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 
 import type { TabResponse } from "@/types/tab";
+import { extractErrorMessage } from "@/utils/error";
 
 export default function TabPage() {
 	useDocumentTitle("Моя табулатура");
@@ -51,11 +52,13 @@ export default function TabPage() {
 			});
 			navigate("/tabs");
 		} catch (err: any) {
-			const msg = err?.response?.data?.message || "Не удалось удалить табулатуру.";
 			setMessage({
-                message: msg,
-                type: "error"
-            });
+				message: extractErrorMessage(
+					err,
+					"Не удалось удалить табулатуру.",
+				),
+				type: "error",
+			});
 		}
 	};
 

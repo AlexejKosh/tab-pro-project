@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { recoverPassword } from "@/api/authApi";
 import { useUiStore } from "@/store/uiStore";
 import { ROUTES } from "@/router/routes";
+import { extractErrorMessage } from "@/utils/error";
 
 interface Props {
     token: string;
@@ -51,10 +52,12 @@ export default function ResetPasswordForm({ token }: Props) {
             });
             navigate(ROUTES.LOGIN);
         } catch (err: any) {
-            const msg = err?.response?.data?.message || "Не удалось сбросить пароль.";
             setMessage({
-                message: msg,
-                type: "error"
+                message: extractErrorMessage(
+                    err,
+                    "Не удалось сбросить пароль.",
+                ),
+                type: "error",
             });
         } finally {
             setLoading(false);

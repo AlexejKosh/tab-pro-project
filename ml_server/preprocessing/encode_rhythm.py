@@ -119,8 +119,8 @@ def encode_rhythm(rhythm_string, signature, tune_difference=0):
             encoded_rhythm.append(encoded_chord)
 
     if len(encoded_rhythm) > GLOBAL_LENGHT_LIMIT:
-        current_lenght = len(encoded_rhythm) / TICKS_PER_BEAT / BASE_TIME_SIGNATURE * signature
-        lenght_limit = GLOBAL_LENGHT_LIMIT / TICKS_PER_BEAT / BASE_TIME_SIGNATURE * signature
+        current_lenght = len(encoded_rhythm) / (TICKS_PER_BEAT / BASE_TIME_SIGNATURE * signature)
+        lenght_limit = GLOBAL_LENGHT_LIMIT / (TICKS_PER_BEAT / BASE_TIME_SIGNATURE * signature)
         raise ValueError(f"Слишком длинная последовательность аккордов: {current_lenght} > {lenght_limit}")
 
     return encoded_rhythm

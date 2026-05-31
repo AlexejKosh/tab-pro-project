@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getGenreById } from "@/api/genreApi";
 import { base64ToAudioUrl } from "@/utils/audio";
+import { exportTabToDocx } from "@/utils/exportTabToDocx";
 
 interface Props {
     title: string;
@@ -45,6 +46,8 @@ export default function TabInfo({
     const [audioUrl, setAudioUrl] =
         useState<string | null>(null);
 
+    const [isExporting, setIsExporting] = useState(false);
+
     useEffect(() => {
         const loadGenre = async () => {
             try {
@@ -82,6 +85,20 @@ export default function TabInfo({
 
     }, [audioData]);
 
+    const handleDownload = async () => {
+        try {
+            setIsExporting(true);
+
+            await exportTabToDocx({
+                title,
+                rhythm: chords,
+                tabData,
+            });
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <>
             <h1 className="main-title main-title--usual-page">
@@ -110,6 +127,14 @@ export default function TabInfo({
                 value={tabData}
                 readOnly
             />
+            <button
+                type="button"
+                className="download-button"
+                onClick={handleDownload}
+                disabled={isExporting}
+            >
+                {isExporting ? "Формирование документа..." : "Скачать DOCX"}
+            </button>
             <p className="main-text">
                 Аудио представление:
             </p>

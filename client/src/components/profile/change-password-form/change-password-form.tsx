@@ -4,6 +4,7 @@ import { changePassword } from "@/api/userApi";
 import { useUiStore } from "@/store/uiStore";
 
 import type { ChangePasswordRequest } from "@/types/user";
+import { extractErrorMessage } from "@/utils/error";
 
 export default function ChangePasswordForm() {
     const [oldPassword, setOldPassword] = useState("");
@@ -50,10 +51,12 @@ export default function ChangePasswordForm() {
                 type: "success"
             });
         } catch (err: any) {
-            const msg = err?.response?.data?.message || "Не удалось изменить пароль.";
             setMessage({
-                message: msg,
-                type: "error"
+                message: extractErrorMessage(
+                    err,
+                    "Не удалось изменить пароль.",
+                ),
+                type: "error",
             });
         } finally {
             setLoading(false);
