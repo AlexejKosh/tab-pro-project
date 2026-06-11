@@ -161,3 +161,35 @@ def test_export_solo_mp3_raises_returns_500(client, monkeypatch):
 
     assert resp.status_code == 500
     assert "Ошибка экспорта аудио" in resp.json()["detail"]
+
+
+def test_lifespan_loads_models(monkeypatch):
+    info_calls = []
+
+    def fake_info(msg):
+        info_calls.append(msg)
+
+    # Подмена logger.info и load_models до создания TestClient
+    monkeypatch.setattr(main.logger, "info", fake_info)
+
+    loaded = {"called": False}
+
+    def fake_load_models():
+        loaded["called"] = True
+
+    monkeypatch.setattr(main, "load_models", fake_load_models)
+
+    # Создаём TestClient чтобы пройти lifespan
+    from fastapi.testclient import TestClient
+
+    with TestClient(main.app):
+        pass
+
+    assert loaded["called"] is True
+    assert any("Загрузка моделей" in m for m in info_calls)
+    assert any("Модели успешно загружены" in m for m in info_calls)
+
+    idx_load = next(i for i, m in enumerate(info_calls) if "Загрузка моделей" in m)
+    idx_ok = next(i for i, m in enumerate(info_calls) if "Модели успешно загружены" in m)
+
+    assert idx_load < idx_ok

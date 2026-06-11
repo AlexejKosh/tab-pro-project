@@ -268,17 +268,13 @@ def test_generate_solo_empty_input(monkeypatch):
     model = FakeSoloModel()
 
     # Мок SoloTransformer с целью не создавать реальную модель
-    monkeypatch.setattr(gs, "SoloTransformer", lambda: model)
-    # Мок torch.load с целью не читать веса с диска
-    monkeypatch.setattr(torch, "load", lambda *args, **kwargs: {})
+    monkeypatch.setattr(gs, "MODELS", {"rock": model})
     # Мок build_chord_features с целью вернуть пустую последовательность
     monkeypatch.setattr(gs, "build_chord_features", lambda chords, key: [])
 
     result = gs.generate_solo(chords=[], key=0, genre="rock", temperature=0.7)
 
     assert result == []
-    assert model.eval_called is True
-    assert model.loaded == {}
 
 
 # Проверка generate_solo на ветку, где второй шаг окна уже не требуется
@@ -289,9 +285,7 @@ def test_generate_solo_break_on_negative_new_tokens(monkeypatch):
     features = [np.zeros(gs.INPUT_DIM, dtype=np.float32).tolist() for _ in range(180)]
 
     # Мок SoloTransformer с целью подменить реальную модель заглушкой
-    monkeypatch.setattr(gs, "SoloTransformer", lambda: model)
-    # Мок torch.load с целью не обращаться к файловой системе
-    monkeypatch.setattr(torch, "load", lambda *args, **kwargs: {})
+    monkeypatch.setattr(gs, "MODELS", {"rock": model})
     # Мок build_chord_features с целью подать уже подготовленные тестовые признаки
     monkeypatch.setattr(gs, "build_chord_features", lambda chords, key: features)
 
@@ -309,7 +303,6 @@ def test_generate_solo_break_on_negative_new_tokens(monkeypatch):
     assert len(result) == 180
     assert len(calls) == 1
     assert calls[0] == (0, 180, (1, 180, gs.D_MODEL))
-    assert model.eval_called is True
 
 
 # Проверка generate_solo на два окна с перекрытием
@@ -320,9 +313,7 @@ def test_generate_solo_two_windows(monkeypatch):
     features = [np.zeros(gs.INPUT_DIM, dtype=np.float32).tolist() for _ in range(200)]
 
     # Мок SoloTransformer с целью подменить реальную модель заглушкой
-    monkeypatch.setattr(gs, "SoloTransformer", lambda: model)
-    # Мок torch.load с целью не читать веса модели с диска
-    monkeypatch.setattr(torch, "load", lambda *args, **kwargs: {})
+    monkeypatch.setattr(gs, "MODELS", {"rock": model})
     # Мок build_chord_features с целью вернуть длинную последовательность тестовых признаков
     monkeypatch.setattr(gs, "build_chord_features", lambda chords, key: features)
 
@@ -343,4 +334,57 @@ def test_generate_solo_two_windows(monkeypatch):
     assert calls[1] == (48, 8, (1, 56, gs.D_MODEL))
     assert result[0] == [192, 0, 0, 0]
     assert result[192] == [8, 0, 0, 0]
-    assert model.eval_called is True
+
+
+def test_load_models_loads_all_genres(monkeypatch):
+    # Записываем вызовы torch.load
+    load_paths = []
+    loaded_states = []
+
+    def fake_torch_load(path, map_location=None):
+        load_paths.append(path)
+        state = {"state_for": path}
+        loaded_states.append(state)
+        return state
+
+    monkeypatch.setattr(torch, "load", fake_torch_load)
+
+    created = []
+
+    class FakeModel:
+        def __init__(self):
+            self.device = None
+            self.loaded = None
+            self.eval_called = False
+
+        def to(self, device):
+            self.device = device
+            return self
+
+        def load_state_dict(self, state):
+            self.loaded = state
+
+        def eval(self):
+            self.eval_called = True
+
+    def fake_constructor():
+        m = FakeModel()
+        created.append(m)
+        return m
+
+    # Подменяем конструктор модели и сбрасываем MODELS
+    monkeypatch.setattr(gs, "SoloTransformer", fake_constructor)
+    monkeypatch.setattr(gs, "MODELS", {})
+
+    # Вызов функции загрузки моделей
+    gs.load_models()
+
+    # Проверяем, что создано по модели на жанр и они корректно загружены
+    assert len(created) == len(gs.GENRES)
+
+    for i, genre in enumerate(gs.GENRES):
+        assert load_paths[i].endswith(f"{genre}_transformer.pt")
+        assert gs.MODELS[genre] is created[i]
+        assert created[i].device == gs.DEVICE
+        assert created[i].loaded == loaded_states[i]
+        assert created[i].eval_called
