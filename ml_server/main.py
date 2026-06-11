@@ -2,9 +2,10 @@ import logging
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from contextlib import asynccontextmanager
 
 from preprocessing.encode_rhythm import encode_rhythm
-from core.generate_solo import generate_solo
+from core.generate_solo import generate_solo, load_models
 from export.export_solo_txt import export_solo_txt
 from export.export_solo_mp3 import export_solo_mp3
 from constants.music_constants import GENRES, ALLOWED_SIGNATURES
@@ -17,7 +18,18 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="ML Server")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    logger.info("Загрузка моделей")
+    load_models()
+    logger.info("Модели успешно загружены")
+    yield
+
+app = FastAPI(
+    title="ML Server",
+    lifespan=lifespan
+)
 
 class GenerateTabRequest(BaseModel):
     # ID жанра:

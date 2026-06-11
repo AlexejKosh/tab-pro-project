@@ -11,11 +11,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from constants.music_constants import (
     CHROMATIC_SCALE_SIZE,
     GLOBAL_LENGHT_LIMIT,
+    GENRES
 )
 
 
 MODELS_PATH = "models/"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+MODELS = {}
 
 CHORD_DIM = CHROMATIC_SCALE_SIZE
 POS_DIM = 3
@@ -51,6 +54,27 @@ OVERLAP_LEN = 48
 # Шаг смещения окна
 WINDOW_STEP = MAX_LEN - OVERLAP_LEN
 
+def load_models():
+    """
+    Загружает все модели в память при запуске сервиса
+    """
+
+    global MODELS
+
+    for genre in GENRES:
+
+        model = SoloTransformer().to(DEVICE)
+
+        model.load_state_dict(
+            torch.load(
+                MODELS_PATH + f"{genre}_transformer.pt",
+                map_location=DEVICE
+            )
+        )
+
+        model.eval()
+
+        MODELS[genre] = model
 
 def build_chord_features(chords, key):
     """
@@ -406,11 +430,7 @@ def generate_solo(chords, key, genre, temperature=0.7):
         list: сгенерированное соло
     """
 
-    model = SoloTransformer().to(DEVICE)
-
-    model.load_state_dict(torch.load(MODELS_PATH + f"{genre}_transformer.pt", map_location=DEVICE))
-
-    model.eval()
+    model = MODELS[genre]
 
     # Формирование входных признаков
     features = build_chord_features(chords, key)
