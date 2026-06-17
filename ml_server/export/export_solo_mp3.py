@@ -20,7 +20,6 @@ from constants.music_constants import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SRC_ROOT = PROJECT_ROOT / "src"
 
 IS_WINDOWS = os.name == 'nt'
 
@@ -55,7 +54,7 @@ DEFAULT_FADE_OUT_MS = 50
 MS_IN_MINUTE = 60000
 
 SOUND_EXTENSION_MS = 100
-TECHNIQUE_ATTACK_MS = 100
+TECHNIQUE_ATTACK_MS = 165
 BEND_START_MS = 80
 BEND_SEGMENTS = 10
 
